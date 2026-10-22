@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大O老师中文课 G2 难字拼图游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #f9fafb;
+            touch-action: manipulation;
+        }
+        
+        /* Game Grid and Zones */
+        .drop-zone {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #cbd5e1;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .drop-zone.drag-over {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        /* Puzzle Pieces */
+        .piece {
+            width: 100px;
+            height: 100px;
+            cursor: grab;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background-color: white;
+            transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s, opacity 0.2s;
+            user-select: none;
+            -webkit-user-drag: element;
+        }
+
+        .piece:active {
+            cursor: grabbing;
+        }
+
+        /* Mobile/Tap Selection styling */
+        .piece.selected {
+            border: 3px solid #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+            z-index: 10;
+            transform: scale(0.95);
+        }
+
+        .pool-area {
+            min-height: 120px;
+        }
+
+        /* Paused state visuals - ONLY applied to the puzzle area now */
+        .is-paused {
+            filter: blur(5px) grayscale(30%);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
+        .paused-overlay {
+            display: none;
+        }
+        
+        /* Show overlay when parent has is-paused-container class */
+        .is-paused-container .paused-overlay {
+            display: flex;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 400px) {
+            .drop-zone, .piece {
+                width: 80px;
+                height: 80px;
+            }
+        }
+
+        /* Kai Font Stack for characters */
+        .font-kai {
+            font-family: 'KaiTi', 'STKaiti', 'BiauKai', '楷体', '楷体_GB2312', serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 text-slate-800">
+
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 relative flex flex-col">
+        
+        <!-- Compact Header Section -->
+        <div class="py-4 border-b border-slate-100 shrink-0">
+            <h1 class="text-2xl font-black text-center text-slate-900 tracking-tight">大O老师中文课</h1>
+            <h2 class="text-base font-medium text-center text-slate-500">G2 难字拼图游戏</h2>
+        </div>
+
+        <!-- Game Area wrapper -->
+        <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 transition-all duration-300">
+            
+            <!-- LEFT COLUMN: Information & Controls (Always Active) -->
+            <div class="flex flex-col gap-6 justify-start">
+                
+                <!-- Reference Display (Enlarged Fonts) -->
+                <div class="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-sm w-full">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Target Character</div>
+                    <div class="flex items-center gap-6">
+                        <div class="text-6xl font-black text-slate-900 font-kai" id="refChar"></div>
+                        <div class="flex flex-col gap-1 border-l-2 border-slate-200 pl-6">
+                            <div class="flex items-center gap-2">
+                                <div class="text-2xl font-bold text-blue-600 tracking-wide" id="refPinyin"></div>
+                                <button id="speakBtn" class="p-1.5 rounded-full hover:bg-slate-200 text-slate-500 hover:text-blue-600 transition-colors" title="Play pronunciation">
+                                    <!-- Modern Solid Volume Icon -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7">
+                                        <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 001.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06zM18.584 5.106a.75.75 0 011.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 11-1.06-1.06 8.25 8.25 0 000-11.668.75.75 0 010-1.06z" />
+                                        <path d="M15.932 7.757a.75.75 0 011.061 0 6 6 0 010 8.486.75.75 0 01-1.06-1.061 4.5 4.5 0 000-6.364.75.75 0 010-1.06z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="text-lg font-medium text-slate-600" id="refEnglish"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status & Timer Controls -->
+                <div class="flex flex-col gap-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center w-full">
+                        <div class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-lg font-bold text-sm tracking-wide" id="levelDisplay">关卡 1/77</div>
+                        <div class="bg-amber-100 text-amber-800 px-4 py-1.5 rounded-lg font-bold text-sm tracking-wide">Score: <span id="scoreDisplay">0</span></div>
+                    </div>
+                    
+                    <div class="h-px bg-slate-100 w-full my-1"></div>
+
+                    <div class="flex justify-between items-center w-full">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-3xl font-mono font-bold tracking-wider" id="timerDisplay">00:30</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="resetBtn" type="button" class="px-4 py-2.5 border-2 border-rose-200 rounded-xl bg-white text-sm font-bold text-rose-700 hover:bg-rose-50 transition-all shadow-sm active:scale-95">↻ 重置</button>
+                            <button id="pauseBtn" class="px-5 py-2.5 border-2 border-slate-200 rounded-xl bg-slate-50 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed uppercase shadow-sm active:scale-95" disabled>
+                                暂停 (Pause)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Jigsaw Puzzle Area -->
+            <!-- The pause overlay and blur effect will ONLY apply to this container -->
+            <div id="puzzleAreaContainer" class="relative flex flex-col items-center justify-start rounded-2xl">
+                
+                <!-- Paused Overlay Text (Positioned absolutely over the puzzle area) -->
+                <div class="paused-overlay absolute inset-0 z-20 items-center justify-center">
+                    <span id="pausedLabel" class="bg-slate-900/90 text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest text-lg backdrop-blur-md">游戏暂停</span>
+                </div>
+
+                <!-- The actual puzzle pieces that get blurred -->
+                <div id="puzzleArea" class="w-full flex flex-col items-center transition-all duration-300">
+                    <!-- Target Drop Zone (2x2 Grid) -->
+                    <div class="grid grid-cols-2 gap-1 mb-6 bg-slate-200 p-1 rounded-xl shadow-inner shrink-0" id="gridContainer">
+                        <div class="drop-zone rounded-tl-lg" data-slot="0"></div>
+                        <div class="drop-zone rounded-tr-lg" data-slot="1"></div>
+                        <div class="drop-zone rounded-bl-lg" data-slot="2"></div>
+                        <div class="drop-zone rounded-br-lg" data-slot="3"></div>
+                    </div>
+
+                    <!-- Pieces Pool -->
+                    <div class="w-full flex-grow flex flex-col">
+                        <div class="flex items-center justify-center gap-2 mb-2 shrink-0">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pieces Pool</h3>
+                            <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full border border-slate-200">Drag or Tap</span>
+                        </div>
+                        <div class="pool-area flex flex-wrap justify-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 border-dashed flex-grow min-h-[150px]" id="poolContainer">
+                            <!-- Canvas Image pieces will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50 flex opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col items-center" id="modalContent">
+            
+            <div id="resultIcon" class="w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                <!-- Icon injected via JS -->
+            </div>
+
+            <h2 id="resultTitle" class="text-3xl font-black text-slate-900 mb-1"></h2>
+            <p id="resultSubtitle" class="text-slate-500 font-medium mb-6 text-center"></p>
+            
+            <!-- Target Character Display with Pinyin prominently displayed -->
+            <div class="flex flex-col items-center mb-8">
+                <div id="resultPinyin" class="text-4xl font-bold text-blue-600 mb-4 tracking-wide"></div>
+                <div class="relative">
+                    <div class="absolute inset-0 bg-slate-100 transform rotate-6 rounded-2xl"></div>
+                    <div class="w-32 h-32 bg-white border-2 border-slate-200 rounded-2xl relative flex items-center justify-center text-7xl font-bold text-slate-900 shadow-sm font-kai" id="resultCharacter">
+                    </div>
+                </div>
+            </div>
+
+            <button id="playAgainBtn" class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-colors shadow-md hover:shadow-lg transform active:scale-95">
+                Next Level
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Configuration & Dictionary ---
+        const LEVEL_DATA = [
+            { char: '捞', pinyin: 'lāo', english: 'scoop / dredge' },
+            { char: '夜', pinyin: 'yè', english: 'night' },
+            { char: '急', pinyin: 'jí', english: 'urgent / anxious' },
+            { char: '糟', pinyin: 'zāo', english: 'terrible / messy' },
+            { char: '连', pinyin: 'lián', english: 'connect / even' },
+            { char: '跟', pinyin: 'gēn', english: 'follow / with' },
+            { char: '倒', pinyin: 'dǎo', english: 'fall / collapse' },
+            { char: '另', pinyin: 'lìng', english: 'another / other' },
+            { char: '接', pinyin: 'jiē', english: 'connect / receive' },
+            { char: '越', pinyin: 'yuè', english: 'exceed / more' },
+            { char: '直', pinyin: 'zhí', english: 'straight / direct' },
+            { char: '最', pinyin: 'zuì', english: 'most' },
+            { char: '伸', pinyin: 'shēn', english: 'stretch out' },
+            { char: '刚', pinyin: 'gāng', english: 'just / firm' },
+            { char: '碰', pinyin: 'pèng', english: 'bump / touch' },
+            { char: '喘', pinyin: 'chuǎn', english: 'pant / gasp' },
+            { char: '故', pinyin: 'gù', english: 'story / reason' },
+            { char: '帮', pinyin: 'bāng', english: 'help' },
+            { char: '送', pinyin: 'sòng', english: 'deliver / give' },
+            { char: '伯', pinyin: 'bó', english: 'uncle' },
+            { char: '翻', pinyin: 'fān', english: 'turn over' },
+            { char: '浇', pinyin: 'jiāo', english: 'water / pour' },
+            { char: '拔', pinyin: 'bá', english: 'pull out' },
+            { char: '饿', pinyin: 'è', english: 'hungry' },
+            { char: '些', pinyin: 'xiē', english: 'some' },
+            { char: '挑', pinyin: 'tiāo', english: 'pick / choose' },
+            { char: '哪', pinyin: 'nǎ', english: 'which / where' },
+            { char: '钓', pinyin: 'diào', english: 'fish with hook' },
+            { char: '晨', pinyin: 'chén', english: 'morning' },
+            { char: '静', pinyin: 'jìng', english: 'quiet / calm' },
+            { char: '等', pinyin: 'děng', english: 'wait / equal' },
+            { char: '蜻', pinyin: 'qīng', english: 'dragonfly part' },
+            { char: '蜓', pinyin: 'tíng', english: 'dragonfly part' },
+            { char: '竿', pinyin: 'gān', english: 'pole' },
+            { char: '已', pinyin: 'yǐ', english: 'already' },
+            { char: '经', pinyin: 'jīng', english: 'pass / classic' },
+            { char: '蝴', pinyin: 'hú', english: 'butterfly part' },
+            { char: '蝶', pinyin: 'dié', english: 'butterfly part' },
+            { char: '漂', pinyin: 'piāo', english: 'float' },
+            { char: '唉', pinyin: 'āi', english: 'alas / sigh' },
+            { char: '专', pinyin: 'zhuān', english: 'special / expert' },
+            { char: '停', pinyin: 'tíng', english: 'stop' },
+            { char: '像', pinyin: 'xiàng', english: 'alike / resemble' },
+            { char: '步', pinyin: 'bù', english: 'step' },
+            { char: '动', pinyin: 'dòng', english: 'move' },
+            { char: '窝', pinyin: 'wō', english: 'nest' },
+            { char: '洞', pinyin: 'dòng', english: 'hole / cave' },
+            { char: '孩', pinyin: 'hái', english: 'child' },
+            { char: '块', pinyin: 'kuài', english: 'piece / lump' },
+            { char: '叼', pinyin: 'diāo', english: 'hold in mouth' },
+            { char: '旁', pinyin: 'páng', english: 'beside' },
+            { char: '馋', pinyin: 'chán', english: 'gluttonous / greedy' },
+            { char: '流', pinyin: 'liú', english: 'flow' },
+            { char: '羽', pinyin: 'yǔ', english: 'feather' },
+            { char: '雀', pinyin: 'què', english: 'sparrow' },
+            { char: '差', pinyin: 'chà', english: 'poor / difference' },
+            { char: '嗓', pinyin: 'sǎng', english: 'throat / voice' },
+            { char: '谁', pinyin: 'shuí', english: 'who' },
+            { char: '意', pinyin: 'yì', english: 'meaning / idea' },
+            { char: '极', pinyin: 'jí', english: 'extreme / pole' },
+            { char: '催', pinyin: 'cuī', english: 'urge / hurry' },
+            { char: '惭', pinyin: 'cán', english: 'ashamed' },
+            { char: '愧', pinyin: 'kuì', english: 'ashamed' },
+            { char: '擦', pinyin: 'cā', english: 'wipe / rub' },
+            { char: '醒', pinyin: 'xǐng', english: 'wake up' },
+            { char: '暖', pinyin: 'nuǎn', english: 'warm' },
+            { char: '挺', pinyin: 'tǐng', english: 'quite / straight' },
+            { char: '舒', pinyin: 'shū', english: 'comfortable' },
+            { char: '告', pinyin: 'gào', english: 'tell' },
+            { char: '诉', pinyin: 'sù', english: 'tell / complain' },
+            { char: '闹', pinyin: 'nào', english: 'noisy / trouble' },
+            { char: '突', pinyin: 'tū', english: 'sudden' },
+            { char: '然', pinyin: 'rán', english: 'correct / so' },
+            { char: '世', pinyin: 'shì', english: 'world' },
+            { char: '界', pinyin: 'jiè', english: 'boundary' },
+            { char: '谜', pinyin: 'mí', english: 'riddle / mystery' },
+            { char: '重', pinyin: 'zhòng', english: 'heavy' },
+            { char: '铅', pinyin: 'qiān', english: 'lead' },
+            { char: '肠', pinyin: 'cháng', english: 'intestine' },
+            { char: '图', pinyin: 'tú', english: 'picture / map' },
+            { char: '矮', pinyin: 'ǎi', english: 'short' },
+            { char: '淌', pinyin: 'tǎng', english: 'drip / shed' },
+            { char: '整', pinyin: 'zhěng', english: 'whole / tidy' },
+            { char: '冠', pinyin: 'guān', english: 'hat / crown' },
+            { char: '脖', pinyin: 'bó', english: 'neck' },
+            { char: '啄', pinyin: 'zhuó', english: 'peck' },
+            { char: '治', pinyin: 'zhì', english: 'treat / cure' },
+            { char: '摇', pinyin: 'yáo', english: 'shake' },
+            { char: '摆', pinyin: 'bǎi', english: 'sway / arrange' },
+            { char: '鼓', pinyin: 'gǔ', english: 'drum / beat' },
+            { char: '稻', pinyin: 'dào', english: 'rice' },
+            { char: '害', pinyin: 'hài', english: 'harm / evil' },
+            { char: '伤', pinyin: 'shāng', english: 'hurt / wound' },
+            { char: '理', pinyin: 'lǐ', english: 'reason / logic' },
+            { char: '表', pinyin: 'biǎo', english: 'surface / show' },
+            { char: '此', pinyin: 'cǐ', english: 'this' },
+            { char: '喔', pinyin: 'ō', english: 'oh / rooster crow' },
+            { char: '遍', pinyin: 'biàn', english: 'all over / times' },
+            { char: '埋', pinyin: 'mái', english: 'bury' },
+            { char: '散', pinyin: 'sàn', english: 'scatter' },
+            { char: '情', pinyin: 'qíng', english: 'feeling / emotion' },
+            { char: '证', pinyin: 'zhèng', english: 'prove / certificate' },
+            { char: '墙', pinyin: 'qiáng', english: 'wall' },
+            { char: '举', pinyin: 'jǔ', english: 'lift / raise' },
+            { char: '肯', pinyin: 'kěn', english: 'agree / willing' },
+            { char: '输', pinyin: 'shū', english: 'lose / transport' }
+        ];
+        
+        const TIME_LIMIT = 30;
+        
+        let activeLevelData = [];
+        let currentLevelIndex = 0;
+        let currentCharacter = '';
+        let totalScore = 0;
+        let timerInterval = null;
+        let timeRemaining = TIME_LIMIT;
+        let isPaused = false;
+        let isPlaying = false;
+        
+        let selectedPiece = null; // Used for Tap-to-move interactions
+        let draggedPiece = null;  // Used for Drag-and-drop interactions
+
+        // --- DOM Elements ---
+        const levelDisplay = document.getElementById('levelDisplay');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pausedLabel = document.getElementById('pausedLabel');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const puzzleAreaContainer = document.getElementById('puzzleAreaContainer');
+        const puzzleArea = document.getElementById('puzzleArea');
+        
+        const gridContainer = document.getElementById('gridContainer');
+        const poolContainer = document.getElementById('poolContainer');
+        const dropZones = document.querySelectorAll('.drop-zone');
+        
+        const resultModal = document.getElementById('resultModal');
+        const modalContent = document.getElementById('modalContent');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultSubtitle = document.getElementById('resultSubtitle');
+        const resultCharacter = document.getElementById('resultCharacter');
+        const resultPinyin = document.getElementById('resultPinyin');
+        const resultIcon = document.getElementById('resultIcon');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+
+        const refChar = document.getElementById('refChar');
+        const refPinyin = document.getElementById('refPinyin');
+        const refEnglish = document.getElementById('refEnglish');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const speakBtn = document.getElementById('speakBtn');
+
+        // --- Core Game Functions ---
+
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function initGame(startImmediately = true) {
+            activeLevelData = shuffleArray(LEVEL_DATA);
+            currentLevelIndex = 0;
+            totalScore = 0;
+            loadLevel(startImmediately);
+        }
+
+        function loadLevel(startImmediately = true) {
+            // Determine character based on current level
+            const levelInfo = activeLevelData[currentLevelIndex];
+            currentCharacter = levelInfo.char;
+            
+            // Update UI for level
+            levelDisplay.innerText = `关卡 ${currentLevelIndex + 1}/${activeLevelData.length}`;
+            scoreDisplay.innerText = totalScore;
+            
+            refChar.innerText = levelInfo.char;
+            refPinyin.innerText = levelInfo.pinyin;
+            refEnglish.innerText = `【ENG】${levelInfo.english.toLowerCase()}`;
+
+            // Reset UI and State
+            resetBoard();
+            generatePieces(currentCharacter);
+            
+            // Timer Setup
+            timeRemaining = TIME_LIMIT;
+            isPaused = !startImmediately;
+            isPlaying = startImmediately;
+            
+            // Remove pause styling classes
+            puzzleAreaContainer.classList.remove('is-paused-container');
+            puzzleArea.classList.remove('is-paused');
+            if (!startImmediately) {
+                puzzleAreaContainer.classList.add('is-paused-container');
+                puzzleArea.classList.add('is-paused');
+            }
+            pausedLabel.innerText = startImmediately ? '游戏暂停' : '点击开始游戏';
+            
+            updateTimerUI();
+            pauseBtn.disabled = false;
+            pauseBtn.innerText = startImmediately ? '暂停 (Pause)' : '开始游戏';
+            pauseBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            pauseBtn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = startImmediately ? setInterval(gameTick, 1000) : null;
+        }
+
+        function gameTick() {
+            if (isPaused || !isPlaying) return;
+            
+            if (timeRemaining > 0) {
+                timeRemaining--;
+                updateTimerUI();
+            }
+
+            if (timeRemaining === 0) {
+                // Stop timer visually but do not end game yet (allow player to finish for 0 points)
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerDisplay.classList.add('text-red-500');
+                timerDisplay.classList.remove('text-slate-900');
+            }
+        }
+
+        function updateTimerUI() {
+            let secs = timeRemaining.toString().padStart(2, '0');
+            timerDisplay.innerText = `00:${secs}`;
+            
+            // Red warning text when <= 5 seconds
+            if (timeRemaining <= 5 && timeRemaining > 0) {
+                timerDisplay.classList.add('text-red-500');
+                timerDisplay.classList.remove('text-slate-900');
+            } else {
+                timerDisplay.classList.remove('text-red-500');
+                timerDisplay.classList.add('text-slate-900');
+            }
+        }
+
+        function togglePause() {
+            if (!isPlaying) {
+                isPlaying = true;
+                isPaused = false;
+                puzzleAreaContainer.classList.remove('is-paused-container');
+                puzzleArea.classList.remove('is-paused');
+                pauseBtn.innerText = '暂停 (Pause)';
+                pauseBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                pauseBtn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+                if (timeRemaining > 0 && !timerInterval) {
+                    timerInterval = setInterval(gameTick, 1000);
+                }
+                return;
+            }
+            isPaused = !isPaused;
+            
+            if (isPaused) {
+                pausedLabel.innerText = '游戏暂停';
+                // Apply visual paused state specifically to the puzzle area
+                puzzleAreaContainer.classList.add('is-paused-container');
+                puzzleArea.classList.add('is-paused');
+                
+                // Update Button UI to 'Resume'
+                pauseBtn.innerText = '恢复 (Resume)';
+                pauseBtn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
+                pauseBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                
+                // Explicitly stop the interval to prevent background drift
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            } else {
+                // Remove visual paused state
+                puzzleAreaContainer.classList.remove('is-paused-container');
+                puzzleArea.classList.remove('is-paused');
+                
+                // Update Button UI to 'Pause'
+                pauseBtn.innerText = '暂停 (Pause)';
+                pauseBtn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+                pauseBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                
+                // Restart interval if there is still time left
+                if (!timerInterval && timeRemaining > 0) {
+                    timerInterval = setInterval(gameTick, 1000);
+                }
+            }
+        }
+
+        function resetBoard() {
+            dropZones.forEach(zone => {
+                zone.innerHTML = '';
+                zone.classList.remove('drag-over');
+            });
+            poolContainer.innerHTML = '';
+            selectedPiece = null;
+            draggedPiece = null;
+        }
+
+        function generatePieces(char) {
+            // 1. Create a Master Canvas with the full character
+            const masterSize = 200;
+            const pieceSize = masterSize / 2;
+            const canvas = document.createElement('canvas');
+            canvas.width = masterSize;
+            canvas.height = masterSize;
+            const ctx = canvas.getContext('2d');
+
+            // Draw clean white background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, masterSize, masterSize);
+
+            // Draw crisp black text
+            ctx.fillStyle = '#0f172a'; // slate-900
+            ctx.font = 'bold 160px "KaiTi", "STKaiti", "BiauKai", "楷体", "楷体_GB2312", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Slight visual offset for canvas text rendering
+            ctx.fillText(char, masterSize / 2, (masterSize / 2) + 12); 
+
+            // 2. Slice the Master Canvas into 4 quadrants
+            let piecesData = [];
+            for (let row = 0; row < 2; row++) {
+                for (let col = 0; col < 2; col++) {
+                    const pieceCanvas = document.createElement('canvas');
+                    pieceCanvas.width = pieceSize;
+                    pieceCanvas.height = pieceSize;
+                    const pCtx = pieceCanvas.getContext('2d');
+                    
+                    pCtx.drawImage(
+                        canvas, 
+                        col * pieceSize, row * pieceSize, pieceSize, pieceSize, // Source
+                        0, 0, pieceSize, pieceSize // Destination
+                    );
+                    
+                    piecesData.push({
+                        id: row * 2 + col, // 0, 1, 2, 3
+                        src: pieceCanvas.toDataURL()
+                    });
+                }
+            }
+
+            // 3. Shuffle pieces using Fisher-Yates
+            for (let i = piecesData.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [piecesData[i], piecesData[j]] = [piecesData[j], piecesData[i]];
+            }
+
+            // 4. Create DOM elements
+            piecesData.forEach(data => {
+                const img = document.createElement('img');
+                img.src = data.src;
+                img.classList.add('piece');
+                img.draggable = true;
+                img.dataset.id = data.id;
+
+                // Bind Drag & Drop (Desktop)
+                img.addEventListener('dragstart', handleDragStart);
+                img.addEventListener('dragend', handleDragEnd);
+
+                // Bind Tap (Mobile / Alternative)
+                img.addEventListener('click', handlePieceClick);
+
+                poolContainer.appendChild(img);
+            });
+        }
+
+        // --- Drag and Drop Logic (HTML5) ---
+
+        function handleDragStart(e) {
+            if(isPaused || !isPlaying) { e.preventDefault(); return; }
+            draggedPiece = this;
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+            e.dataTransfer.effectAllowed = 'move';
+            
+            // Visual feedback
+            setTimeout(() => this.style.opacity = '0.4', 0);
+            
+            // Clear any active tap selections
+            if(selectedPiece) {
+                selectedPiece.classList.remove('selected');
+                selectedPiece = null;
+            }
+        }
+
+        function handleDragEnd() {
+            this.style.opacity = '1';
+            draggedPiece = null;
+            checkWinCondition();
+        }
+
+        // Setup Drop Zones for D&D and Tap
+        dropZones.forEach(zone => {
+            // D&D Handlers
+            zone.addEventListener('dragover', e => {
+                if(isPaused || !isPlaying) return;
+                e.preventDefault(); 
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if (!draggedPiece) return;
+
+                // Handle Swapping if a piece is already in the drop zone
+                if (this.children.length > 0) {
+                    const existingPiece = this.children[0];
+                    draggedPiece.parentNode.appendChild(existingPiece);
+                }
+                
+                this.appendChild(draggedPiece);
+            });
+
+            // Tap Handler for Drop Zones
+            zone.addEventListener('click', function(e) {
+                if (isPaused || !isPlaying) return;
+                
+                if (selectedPiece) {
+                    // A piece is selected, move it to this zone
+                    if (this.children.length > 0) {
+                        // Swap: Send existing piece back to where the selected piece came from
+                        const existingPiece = this.children[0];
+                        selectedPiece.parentNode.appendChild(existingPiece);
+                    }
+                    this.appendChild(selectedPiece);
+                    
+                    selectedPiece.classList.remove('selected');
+                    selectedPiece = null;
+                    checkWinCondition();
+                } else if (this.children.length > 0) {
+                    // Tap an already placed piece to select it for moving
+                    selectedPiece = this.children[0];
+                    selectedPiece.classList.add('selected');
+                }
+            });
+        });
+
+        // Tapping the pool area returns a selected piece to the pool
+        poolContainer.addEventListener('click', function(e) {
+            if (isPaused || !isPlaying) return;
+            if (e.target === poolContainer && selectedPiece) {
+                poolContainer.appendChild(selectedPiece);
+                selectedPiece.classList.remove('selected');
+                selectedPiece = null;
+                checkWinCondition();
+            }
+        });
+
+        // --- Tap-to-Move Core Logic ---
+
+        function handlePieceClick(e) {
+            if(isPaused || !isPlaying) return;
+            e.stopPropagation(); // Prevent triggering poolContainer click
+
+            if (selectedPiece === this) {
+                // Deselect if tapping the same piece
+                this.classList.remove('selected');
+                selectedPiece = null;
+            } else {
+                // Change selection
+                if (selectedPiece) selectedPiece.classList.remove('selected');
+                selectedPiece = this;
+                this.classList.add('selected');
+            }
+        }
+
+        // --- Win/Loss Checks ---
+
+        function checkWinCondition() {
+            if (!isPlaying) return;
+
+            let isComplete = true;
+            let isCorrect = true;
+
+            for (let i = 0; i < 4; i++) {
+                const zone = document.querySelector(`.drop-zone[data-slot="${i}"]`);
+                if (zone.children.length === 0) {
+                    isComplete = false;
+                    break;
+                }
+                const pieceId = parseInt(zone.children[0].dataset.id, 10);
+                if (pieceId !== i) {
+                    isCorrect = false;
+                }
+            }
+
+            if (isComplete && isCorrect) {
+                endGame(); // Win state implicitly handled by scoring
+            }
+        }
+
+        function endGame() {
+            isPlaying = false;
+            if (timerInterval) clearInterval(timerInterval);
+            pauseBtn.disabled = true;
+
+            // Score Logic: +1 if finished within time, +0 if finished after time runs out
+            const pointsEarned = timeRemaining > 0 ? 1 : 0;
+            totalScore += pointsEarned;
+            
+            const currentLevelInfo = activeLevelData[currentLevelIndex];
+
+            // Prepare Modal Content
+            if (currentLevelIndex >= activeLevelData.length - 1) {
+                // Final Game Over
+                resultIcon.innerHTML = `<svg class="w-8 h-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+                resultIcon.className = "w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mb-4";
+                
+                resultTitle.innerText = "Game Complete!";
+                resultTitle.className = "text-3xl font-black text-slate-900 mb-1";
+                resultSubtitle.innerText = `Final Score: ${totalScore} / ${activeLevelData.length}`;
+                playAgainBtn.innerText = "Restart Game";
+                playAgainBtn.onclick = () => {
+                    hideModal();
+                    setTimeout(initGame, 300);
+                };
+            } else {
+                // Level completion
+                resultIcon.innerHTML = `<svg class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+                resultIcon.className = "w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4";
+                
+                if (pointsEarned > 0) {
+                    resultTitle.innerText = "Success! +1 Point";
+                    resultTitle.className = "text-2xl font-black text-green-600 mb-1";
+                } else {
+                    resultTitle.innerText = "Completed! +0 Points";
+                    resultTitle.className = "text-2xl font-black text-orange-500 mb-1";
+                }
+                
+                resultSubtitle.innerText = `Great job finishing the puzzle!`;
+                playAgainBtn.innerText = "Next Level";
+                playAgainBtn.onclick = () => {
+                    currentLevelIndex++;
+                    hideModalAndStart();
+                };
+            }
+
+            resultCharacter.innerText = currentCharacter;
+            resultPinyin.innerText = currentLevelInfo ? currentLevelInfo.pinyin : '';
+            
+            // Animate Modal In
+            resultModal.classList.remove('hidden');
+            // Force reflow
+            void resultModal.offsetWidth;
+            resultModal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        }
+
+        function hideModal() {
+            resultModal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                resultModal.classList.add('hidden');
+            }, 300); // Matches transition duration
+        }
+
+        function hideModalAndStart() {
+            hideModal();
+            setTimeout(loadLevel, 300);
+        }
+
+        function playPronunciation() {
+            if ('speechSynthesis' in window && currentCharacter) {
+                window.speechSynthesis.cancel(); // Stop any ongoing speech
+                const utterance = new SpeechSynthesisUtterance(currentCharacter);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            } else if (!('speechSynthesis' in window)) {
+                console.warn("Sorry, your browser doesn't support text to speech!");
+            }
+        }
+
+        // --- Listeners ---
+        pauseBtn.addEventListener('click', togglePause);
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (window.confirm('确认重置游戏？当前进度将被清除。')) window.location.reload();
+        });
+        speakBtn.addEventListener('click', playPronunciation);
+        window.addEventListener('message', event => {
+            if (event.source !== window.parent || event.data?.type !== 'classroom-game' || event.data.action !== 'pause') return;
+            if (isPlaying && !isPaused) togglePause();
+        });
+
+        // Initialize automatically on load
+        window.onload = () => initGame(false);
+
+    </script>
+</body>
+</html>

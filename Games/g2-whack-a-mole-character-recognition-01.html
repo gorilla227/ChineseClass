@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大O老师中文课 - 打地鼠认字游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #84cc16 0%, #166534 100%);
+            touch-action: manipulation;
+            overflow: hidden;
+            color: #1c1917;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chinese-font {
+            font-family: 'ZCOOL KuaiLe', 'Microsoft YaHei', sans-serif;
+        }
+
+        .kaiti-font {
+            font-family: 'Kaiti', 'KaiTi', 'STKaiti', '楷体', serif !important;
+        }
+
+        .times-font {
+            font-family: 'Times New Roman', Times, serif !important;
+        }
+
+        .cell {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            overflow: hidden;
+            border-radius: 1.5rem;
+        }
+
+        .dirt-back {
+            position: absolute;
+            bottom: 10%;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            background-color: #291a0c;
+            border-radius: 50%;
+            box-shadow: inset 0 8px 12px rgba(0,0,0,0.8);
+            z-index: 1;
+        }
+
+        .mole {
+            position: absolute;
+            bottom: 25%;
+            left: 20%;
+            width: 60%;
+            height: 75%;
+            background: #8b5a2b;
+            border-radius: 50% 50% 15% 15%;
+            transform: translateY(115%);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s;
+            z-index: 5;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.2) inset, 4px 0 10px rgba(255,255,255,0.1) inset;
+        }
+
+        .mole::before {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 25%;
+            width: 12%;
+            height: 12%;
+            background: #111;
+            border-radius: 50%;
+            box-shadow: 23px 0 0 #111;
+        }
+        .mole::after {
+            content: '';
+            position: absolute;
+            top: 25%;
+            left: 45%;
+            width: 10%;
+            height: 8%;
+            background: #f472b6;
+            border-radius: 50%;
+        }
+
+        .mole-belly {
+            position: absolute;
+            bottom: 5%;
+            width: 80%;
+            height: 55%;
+            background: #fde68a;
+            border-radius: 45%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.1);
+            pointer-events: none;
+            z-index: 6; 
+        }
+
+        .mole-char {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #78350f;
+            line-height: 1;
+            z-index: 7;
+        }
+        
+        @media (max-width: 400px) {
+            .mole-char { font-size: 2rem; }
+        }
+
+        .dirt-front {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            background: #452912;
+            border-radius: 50% 50% 1rem 1rem;
+            z-index: 4;
+            box-shadow: inset 0 5px 8px rgba(0,0,0,0.4), 0 -2px 5px rgba(0,0,0,0.5);
+            border-top: 4px solid #5c3818;
+        }
+
+        .dirt-front::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20%;
+            width: 15px;
+            height: 15px;
+            background: #84cc16;
+            border-radius: 50% 0 50% 0;
+            transform: rotate(-45deg);
+        }
+        .dirt-front::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 25%;
+            width: 12px;
+            height: 12px;
+            background: #65a30d;
+            border-radius: 50% 0 50% 0;
+            transform: rotate(-30deg);
+        }
+
+        .mole.up { transform: translateY(0%); }
+        .mole.hit-correct .mole-belly { background: #4ade80; }
+        .mole.hit-correct { transform: translateY(10%) scale(0.95); transition: all 0.1s; }
+        .mole.hit-wrong { background: #ef4444; transform: translateY(5%) rotate(5deg); transition: all 0.1s; }
+
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -60px) scale(1.5); }
+        }
+
+        .floating-score {
+            position: absolute;
+            left: 50%;
+            top: 20%;
+            transform: translateX(-50%);
+            font-weight: 900;
+            font-size: 2rem;
+            z-index: 30;
+            pointer-events: none;
+            animation: floatUpFade 0.8s ease-out forwards;
+            text-shadow: 2px 2px 0px white, -2px -2px 0px white, 2px -2px 0px white, -2px 2px 0px white;
+        }
+    </style>
+</head>
+
+<body class="w-full">
+    <div class="max-w-[420px] mx-auto w-full flex flex-col items-center bg-white/10 backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/20">
+        
+        <div class="text-center drop-shadow-md tracking-wide mb-2 w-full">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white chinese-font">大O老师中文课</h1>
+            <h2 class="text-xl sm:text-2xl font-bold text-amber-200 chinese-font mt-1 border-t border-white/20 pt-1 mx-4">打地鼠认字游戏（G2-1）</h2>
+        </div>
+
+        <div class="w-full flex justify-between items-center bg-white rounded-2xl p-2 sm:p-3 shadow-lg mb-3 border-b-4 border-stone-200 relative overflow-hidden">
+            <div class="flex flex-col items-center w-1/4 z-10">
+                <span class="text-[10px] sm:text-xs uppercase text-stone-400 font-bold tracking-wider m-0 leading-tight">分数 Score</span>
+                <span id="scoreDisplay" class="text-2xl sm:text-3xl font-black text-blue-500 transition-transform duration-200 m-0 leading-tight">0</span>
+            </div>
+            
+            <div class="flex flex-col items-center justify-center w-1/2 px-2 border-l border-r border-stone-100 z-10">
+                <span class="text-[10px] sm:text-xs text-stone-500 font-bold mb-0.5 uppercase tracking-widest leading-tight">找出这个字</span>
+                <div id="targetDisplay" class="text-center transition-transform duration-300 transform scale-100 min-h-[40px] flex items-end justify-center space-x-1">
+                    <span class="text-xl sm:text-2xl font-black text-stone-400">点击开始</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center w-1/4 z-10">
+                <span class="text-[10px] sm:text-xs uppercase text-stone-400 font-bold tracking-wider m-0 leading-tight">时间 Time</span>
+                <span id="timerDisplay" class="text-2xl sm:text-3xl font-black text-rose-500 m-0 leading-tight">90</span>
+            </div>
+        </div>
+
+        <div class="flex w-full space-x-2 sm:space-x-3 mb-3">
+            <button id="startBtn" class="flex-1 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-amber-900 font-extrabold py-2 sm:py-3 rounded-2xl shadow-[0_4px_0_#b45309] active:shadow-[0_0px_0_#b45309] active:translate-y-[4px] transform transition-all text-xl chinese-font">
+                开始游戏
+            </button>
+            <button id="pauseBtn" disabled class="flex-1 bg-sky-400 hover:bg-sky-300 active:bg-sky-500 text-sky-900 font-extrabold py-2 sm:py-3 rounded-2xl shadow-[0_4px_0_#0284c7] active:shadow-[0_0px_0_#0284c7] active:translate-y-[4px] transform transition-all text-xl chinese-font opacity-50 cursor-not-allowed">
+                游戏暂停
+            </button>
+            <button id="resetBtn" type="button" class="flex-1 bg-rose-400 hover:bg-rose-300 active:bg-rose-500 text-white font-extrabold py-2 sm:py-3 rounded-2xl shadow-[0_4px_0_#be123c] active:shadow-[0_0px_0_#be123c] active:translate-y-[4px] transform transition-all text-xl chinese-font">
+                重置
+            </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 w-full p-2 sm:p-3 bg-amber-100/50 rounded-[1.5rem] shadow-inner" id="gameBoard">
+        </div>
+    </div>
+
+    <div id="gameOverModal" class="fixed inset-0 bg-stone-900 bg-opacity-80 hidden flex justify-center items-center z-50 p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform scale-90 transition-transform duration-300" id="modalContent">
+            <h2 class="text-4xl sm:text-5xl font-black text-amber-500 mb-2 chinese-font drop-shadow-sm">时间到!</h2>
+            
+            <div class="bg-blue-50 rounded-2xl p-4 mb-8 mt-6 border-2 border-blue-100">
+                <p class="text-stone-500 font-bold mb-1 uppercase tracking-wide text-sm">最终得分</p>
+                <p id="finalScoreDisplay" class="text-6xl font-black text-blue-600">0</p>
+            </div>
+
+            <button id="restartBtn" class="w-full bg-green-400 hover:bg-green-500 active:bg-green-600 text-white font-extrabold py-4 px-6 rounded-2xl shadow-[0_6px_0_#166534] active:shadow-[0_0px_0_#166534] active:translate-y-[6px] transition-all text-2xl chinese-font">
+                再 玩 一 次
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const VOCAB_DATA = [
+            {"char": "捞", "pinyin": "lāo"}, {"char": "夜", "pinyin": "yè"}, {"char": "晚", "pinyin": "wǎn"},
+            {"char": "井", "pinyin": "jǐng"}, {"char": "急", "pinyin": "jí"}, {"char": "得", "pinyin": "de"},
+            {"char": "叫", "pinyin": "jiào"}, {"char": "糟", "pinyin": "zāo"}, {"char": "连", "pinyin": "lián"},
+            {"char": "忙", "pinyin": "máng"}, {"char": "跟", "pinyin": "gēn"}, {"char": "老", "pinyin": "lǎo"},
+            {"char": "快", "pinyin": "kuài"}, {"char": "倒", "pinyin": "dào"}, {"char": "拉", "pinyin": "lā"},
+            {"char": "住", "pinyin": "zhù"}, {"char": "另", "pinyin": "lìng"}, {"char": "接", "pinyin": "jiē"},
+            {"char": "越", "pinyin": "yuè"}, {"char": "长", "pinyin": "cháng"}, {"char": "直", "pinyin": "zhí"},
+            {"char": "最", "pinyin": "zuì"}, {"char": "伸", "pinyin": "shēn"}, {"char": "刚", "pinyin": "gāng"},
+            {"char": "碰", "pinyin": "pèng"}, {"char": "抬", "pinyin": "tái"}, {"char": "喘", "pinyin": "chuǎn"},
+            {"char": "用", "pinyin": "yòng"}, {"char": "故", "pinyin": "gù"}, {"char": "灰", "pinyin": "huī"},
+            {"char": "帮", "pinyin": "bāng"}, {"char": "完", "pinyin": "wán"}, {"char": "车", "pinyin": "chē"},
+            {"char": "送", "pinyin": "sòng"}, {"char": "给", "pinyin": "gěi"}, {"char": "您", "pinyin": "nín"},
+            {"char": "伯", "pinyin": "bó"}, {"char": "包", "pinyin": "bāo"}, {"char": "吗", "pinyin": "ma"},
+            {"char": "翻", "pinyin": "fān"}, {"char": "松", "pinyin": "sōng"}, {"char": "以", "pinyin": "yǐ"},
+            {"char": "浇", "pinyin": "jiāo"}, {"char": "拔", "pinyin": "bá"}, {"char": "捉", "pinyin": "zhuō"},
+            {"char": "什", "pinyin": "shén"}, {"char": "饿", "pinyin": "è"}, {"char": "些", "pinyin": "xiē"},
+            {"char": "再", "pinyin": "zài"}, {"char": "没", "pinyin": "méi"}, {"char": "点", "pinyin": "diǎn"},
+            {"char": "吧", "pinyin": "ba"}, {"char": "挑", "pinyin": "tiāo"}, {"char": "担", "pinyin": "dàn"},
+            {"char": "问", "pinyin": "wèn"}, {"char": "哪", "pinyin": "nǎ"}, {"char": "自", "pinyin": "zì"},
+            {"char": "己", "pinyin": "jǐ"}, {"char": "才", "pinyin": "cái"}, {"char": "能", "pinyin": "néng"},
+            {"char": "钓", "pinyin": "diào"}, {"char": "早", "pinyin": "zǎo"}, {"char": "晨", "pinyin": "chén"},
+            {"char": "太", "pinyin": "tài"}, {"char": "阳", "pinyin": "yáng"}, {"char": "东", "pinyin": "dōng"},
+            {"char": "弟", "pinyin": "dì"}, {"char": "哥", "pinyin": "gē"}, {"char": "静", "pinyin": "jìng"},
+            {"char": "等", "pinyin": "děng"}, {"char": "话", "pinyin": "huà"}, {"char": "蜻", "pinyin": "qīng"},
+            {"char": "蜓", "pinyin": "tíng"}, {"char": "竿", "pinyin": "gān"}, {"char": "已", "pinyin": "yǐ"},
+            {"char": "经", "pinyin": "jīng"}, {"char": "蝴", "pinyin": "hú"}, {"char": "蝶", "pinyin": "dié"},
+            {"char": "漂", "pinyin": "piào"}, {"char": "但", "pinyin": "dàn"}, {"char": "唉", "pinyin": "ài"},
+            {"char": "为", "pinyin": "wèi"}, {"char": "专", "pinyin": "zhuān"}, {"char": "停", "pinyin": "tíng"},
+            {"char": "像", "pinyin": "xiàng"}, {"char": "步", "pinyin": "bù"}, {"char": "动", "pinyin": "dòng"},
+            {"char": "狐", "pinyin": "hú"}, {"char": "狸", "pinyin": "lí"}, {"char": "窝", "pinyin": "wō"},
+            {"char": "洞", "pinyin": "dòng"}, {"char": "她", "pinyin": "tā"}, {"char": "孩", "pinyin": "hái"},
+            {"char": "块", "pinyin": "kuài"}, {"char": "肉", "pinyin": "ròu"}, {"char": "叼", "pinyin": "diāo"},
+            {"char": "站", "pinyin": "zhàn"}, {"char": "旁", "pinyin": "páng"}, {"char": "乐", "pinyin": "lè"},
+            {"char": "肚", "pinyin": "dù"}, {"char": "馋", "pinyin": "chán"}, {"char": "流", "pinyin": "liú"},
+            {"char": "亲", "pinyin": "qīn"}, {"char": "羽", "pinyin": "yǔ"}, {"char": "雀", "pinyin": "què"},
+            {"char": "差", "pinyin": "chà"}, {"char": "嗓", "pinyin": "sǎng"}, {"char": "谁", "pinyin": "shuí"},
+            {"char": "唱", "pinyin": "chàng"}, {"char": "歌", "pinyin": "gē"}, {"char": "句", "pinyin": "jù"},
+            {"char": "意", "pinyin": "yì"}, {"char": "极", "pinyin": "jí"}, {"char": "哇", "pinyin": "wa"},
+            {"char": "张", "pinyin": "zhāng"}
+        ];
+
+        let score = 0;
+        let timeLeft = 90; 
+        let currentTarget = null;
+        let targetPool = []; 
+        let holesData = []; 
+        
+        let gameTimerInterval = null;
+        let moleSpawnTimeout = null;
+        let transitionBlocker = false;
+
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const targetDisplay = document.getElementById('targetDisplay');
+        const gameBoard = document.getElementById('gameBoard');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const modalContent = document.getElementById('modalContent');
+        const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+        const restartBtn = document.getElementById('restartBtn');
+
+        function buildBoard() {
+            gameBoard.innerHTML = '';
+            holesData = [];
+
+            for (let i = 0; i < 9; i++) {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'cell';
+
+                const dirtBack = document.createElement('div');
+                dirtBack.className = 'dirt-back';
+
+                const moleDiv = document.createElement('div');
+                moleDiv.className = 'mole';
+                
+                const moleBelly = document.createElement('div');
+                moleBelly.className = 'mole-belly';
+
+                const charSpan = document.createElement('span');
+                charSpan.className = 'mole-char kaiti-font'; 
+                
+                moleBelly.appendChild(charSpan);
+                moleDiv.appendChild(moleBelly);
+
+                const dirtFront = document.createElement('div');
+                dirtFront.className = 'dirt-front';
+
+                moleDiv.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    handleWhack(i);
+                });
+
+                cellDiv.appendChild(dirtBack);
+                cellDiv.appendChild(dirtFront);
+                cellDiv.appendChild(moleDiv);
+                
+                gameBoard.appendChild(cellDiv);
+
+                holesData.push({
+                    element: moleDiv,
+                    charElement: charSpan,
+                    isUp: false,
+                    wordObj: null,
+                    hideTimeout: null
+                });
+            }
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function getNextTarget() {
+            if (targetPool.length === 0) {
+                targetPool = shuffleArray(VOCAB_DATA);
+            }
+            return targetPool.pop();
+        }
+
+        function getRandomWrongWord() {
+            let randomWord;
+            do {
+                randomWord = VOCAB_DATA[Math.floor(Math.random() * VOCAB_DATA.length)];
+            } while (currentTarget && randomWord.char === currentTarget.char);
+            return randomWord;
+        }
+
+        function cycleTargetWord() {
+            currentTarget = getNextTarget();
+            
+            targetDisplay.classList.add('scale-110');
+            targetDisplay.innerHTML = `
+                <span class="text-4xl sm:text-5xl font-black text-amber-600 kaiti-font drop-shadow-sm leading-none">${currentTarget.char}</span>
+                <span class="text-lg sm:text-xl font-bold text-stone-500 mb-0.5 ml-1 times-font">(${currentTarget.pinyin})</span>
+            `;
+            
+            setTimeout(() => {
+                targetDisplay.classList.remove('scale-110');
+            }, 200);
+        }
+
+        function hideMole(index) {
+            const hole = holesData[index];
+            if (!hole) return;
+            
+            hole.isUp = false;
+            hole.element.classList.remove('up', 'hit-correct', 'hit-wrong');
+            
+            if (hole.hideTimeout) {
+                clearTimeout(hole.hideTimeout);
+                hole.hideTimeout = null;
+            }
+        }
+
+        function hideAllMoles() {
+            holesData.forEach((_, idx) => hideMole(idx));
+        }
+
+        function spawnMoles() {
+            if (!isPlaying || isPaused) return;
+
+            hideAllMoles();
+
+            const numMoles = Math.random() > 0.4 ? 3 : 2;
+            const availableIndices = [0,1,2,3,4,5,6,7,8];
+            const chosenIndices = [];
+            
+            for (let i = 0; i < numMoles; i++) {
+                const randPos = Math.floor(Math.random() * availableIndices.length);
+                chosenIndices.push(availableIndices.splice(randPos, 1)[0]);
+            }
+
+            chosenIndices.forEach((holeIndex, idx) => {
+                const hole = holesData[holeIndex];
+                hole.isUp = true;
+                
+                if (idx === 0) {
+                    hole.wordObj = currentTarget;
+                } else {
+                    hole.wordObj = getRandomWrongWord();
+                }
+
+                hole.charElement.textContent = hole.wordObj.char;
+                hole.element.classList.remove('hit-correct', 'hit-wrong');
+                
+                setTimeout(() => {
+                    if (isPlaying && !isPaused && hole.isUp) {
+                        hole.element.classList.add('up');
+                    }
+                }, 20);
+
+                const stayDuration = Math.floor(Math.random() * 1000) + 1500;
+                
+                hole.hideTimeout = setTimeout(() => {
+                    hideMole(holeIndex);
+                }, stayDuration);
+            });
+
+            const nextSpawnDelay = Math.floor(Math.random() * 800) + 2000;
+            moleSpawnTimeout = setTimeout(() => {
+                spawnMoles();
+            }, nextSpawnDelay);
+        }
+
+        function handleWhack(index) {
+            if (!isPlaying || isPaused || transitionBlocker) return;
+            
+            const hole = holesData[index];
+            if (!hole.isUp) return;
+
+            const isTarget = (hole.wordObj.char === currentTarget.char);
+
+            if (isTarget) {
+                transitionBlocker = true;
+                score += 10;
+                scoreDisplay.textContent = score;
+                
+                scoreDisplay.classList.add('scale-150', 'text-green-500');
+                setTimeout(() => scoreDisplay.classList.remove('scale-150', 'text-green-500'), 300);
+
+                hole.element.classList.add('hit-correct');
+                createFloatingScore(hole.element.parentElement, "+10", "text-green-400");
+
+                if (moleSpawnTimeout) clearTimeout(moleSpawnTimeout);
+                
+                setTimeout(() => {
+                    hideAllMoles();
+                    cycleTargetWord();
+                    transitionBlocker = false;
+                    if(!isPaused) setTimeout(() => spawnMoles(), 200); 
+                }, 400);
+
+            } else {
+                hole.element.classList.add('hit-wrong');
+                createFloatingScore(hole.element.parentElement, "错误!", "text-red-500 text-sm");
+
+                setTimeout(() => {
+                    hole.element.classList.remove('hit-wrong');
+                }, 300);
+            }
+        }
+
+        function createFloatingScore(container, text, colorClass) {
+            const floater = document.createElement('div');
+            floater.className = `floating-score ${colorClass}`;
+            floater.textContent = text;
+            container.appendChild(floater);
+            
+            setTimeout(() => {
+                if (container.contains(floater)) container.removeChild(floater);
+            }, 800);
+        }
+
+        function updateTimer() {
+            if (isPaused) return;
+            
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+
+            if (timeLeft <= 10) timerDisplay.classList.add('animate-pulse');
+
+            if (timeLeft <= 0) endGame();
+        }
+
+        function togglePause() {
+            if (!isPlaying) return;
+
+            isPaused = !isPaused;
+
+            if (isPaused) {
+                pauseBtn.textContent = "继续游戏";
+                pauseBtn.classList.replace("bg-sky-400", "bg-purple-400");
+                pauseBtn.classList.replace("shadow-[0_4px_0_#0284c7]", "shadow-[0_4px_0_#7e22ce]");
+                if (moleSpawnTimeout) clearTimeout(moleSpawnTimeout);
+            } else {
+                pauseBtn.textContent = "游戏暂停";
+                pauseBtn.classList.replace("bg-purple-400", "bg-sky-400");
+                pauseBtn.classList.replace("shadow-[0_4px_0_#7e22ce]", "shadow-[0_4px_0_#0284c7]");
+                hideAllMoles(); 
+                setTimeout(() => spawnMoles(), 500);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 90; 
+            isPlaying = true;
+            isPaused = false;
+            transitionBlocker = false;
+            targetPool = shuffleArray(VOCAB_DATA);
+
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+            timerDisplay.classList.remove('animate-pulse');
+            
+            startBtn.disabled = true;
+            startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            pauseBtn.disabled = false;
+            pauseBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            pauseBtn.textContent = "游戏暂停";
+            pauseBtn.classList.remove("bg-purple-400", "shadow-[0_4px_0_#7e22ce]");
+            pauseBtn.classList.add("bg-sky-400", "shadow-[0_4px_0_#0284c7]");
+            
+            gameOverModal.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                gameOverModal.classList.add('hidden');
+                modalContent.classList.replace('scale-100', 'scale-90');
+            }, 300);
+
+            hideAllMoles();
+            cycleTargetWord();
+            
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+            gameTimerInterval = setInterval(updateTimer, 1000);
+            
+            setTimeout(spawnMoles, 1000);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(gameTimerInterval);
+            if (moleSpawnTimeout) clearTimeout(moleSpawnTimeout);
+
+            hideAllMoles();
+
+            targetDisplay.innerHTML = '<span class="text-xl font-black text-stone-400">游戏结束</span>';
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            pauseBtn.disabled = true;
+            pauseBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            finalScoreDisplay.textContent = score;
+            gameOverModal.classList.remove('hidden', 'pointer-events-none');
+            
+            requestAnimationFrame(() => {
+                gameOverModal.classList.remove('opacity-0');
+                modalContent.classList.replace('scale-90', 'scale-100');
+            });
+        }
+
+        startBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        restartBtn.addEventListener('click', startGame);
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (window.confirm('确认重置游戏？当前进度将被清除。')) window.location.reload();
+        });
+        window.addEventListener('message', event => {
+            if (event.source !== window.parent || event.data?.type !== 'classroom-game' || event.data.action !== 'pause') return;
+            if (isPlaying && !isPaused) togglePause();
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            buildBoard();
+            targetPool = shuffleArray(VOCAB_DATA);
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f7ee">
+    <title>大O老师中文课 | 游戏练习</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #20392f;
+            --muted: #64756b;
+            --paper: #f4f7ee;
+            --green: #2e7558;
+            --green-dark: #1d513d;
+            --mint: #d9ebd8;
+            --coral: #e8755a;
+            --yellow: #f2c85b;
+            --line: #dce5d9;
+            --white: #fffefa;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--ink);
+            background-color: var(--paper);
+            background-image: radial-gradient(#d8e6d4 1px, transparent 1px);
+            background-size: 22px 22px;
+            font-family: "Trebuchet MS", "KaiTi", "楷体", sans-serif;
+        }
+
+        button, input { font: inherit; }
+
+        .page {
+            width: min(1080px, calc(100% - 40px));
+            margin: 0 auto;
+            padding: 30px 0 56px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .brand-mark {
+            display: grid;
+            width: 38px;
+            aspect-ratio: 1;
+            place-items: center;
+            border-radius: 12px;
+            color: var(--white);
+            background: var(--green);
+            font-size: 20px;
+        }
+
+        .top-note {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .intro {
+            position: relative;
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 44px 0 30px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--green);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(30px, 5vw, 48px);
+            line-height: 1.15;
+        }
+
+        .intro-copy {
+            max-width: 420px;
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .spark {
+            position: absolute;
+            top: 38px;
+            right: 12%;
+            color: var(--coral);
+            font-size: 28px;
+            transform: rotate(12deg);
+        }
+
+        .tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter {
+            min-height: 38px;
+            padding: 0 15px;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            color: var(--muted);
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .filter:hover { background: #e8efe4; }
+
+        .filter[aria-pressed="true"] {
+            border-color: var(--green-dark);
+            color: white;
+            background: var(--green-dark);
+        }
+
+        .search-wrap {
+            position: relative;
+            width: min(270px, 100%);
+        }
+
+        .search-wrap::before {
+            position: absolute;
+            top: 50%;
+            left: 13px;
+            color: var(--muted);
+            content: "⌕";
+            font-size: 21px;
+            transform: translateY(-55%);
+        }
+
+        .search {
+            width: 100%;
+            height: 40px;
+            padding: 0 12px 0 38px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            outline: none;
+            color: var(--ink);
+            background: var(--white);
+        }
+
+        .search:focus { border-color: var(--green); box-shadow: 0 0 0 3px #2e75581f; }
+
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 25px 0 14px;
+        }
+
+        h2 { margin: 0; font-size: 19px; }
+        .count { color: var(--muted); font-size: 13px; }
+
+        .games {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .game-link {
+            position: relative;
+            display: grid;
+            grid-template-columns: 54px minmax(0, 1fr) 36px;
+            align-items: center;
+            gap: 16px;
+            min-height: 112px;
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: inherit;
+            background: var(--white);
+            text-decoration: none;
+            transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+        }
+
+        .game-link:hover {
+            border-color: #9dbda2;
+            box-shadow: 0 8px 20px #274c3512;
+            transform: translateY(-2px);
+        }
+
+        .game-link:focus-visible { outline: 3px solid #e8755a88; outline-offset: 3px; }
+
+        .game-icon {
+            display: grid;
+            width: 54px;
+            aspect-ratio: 1;
+            place-items: center;
+            border-radius: 14px;
+            background: var(--mint);
+            font-size: 26px;
+        }
+
+        .game-link:nth-child(3n + 2) .game-icon { background: #f9e7c2; }
+        .game-link:nth-child(3n) .game-icon { background: #f7ddd5; }
+
+        .game-grade {
+            display: inline-block;
+            margin-bottom: 6px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .game-title {
+            display: block;
+            overflow-wrap: anywhere;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .game-meta { margin-top: 5px; color: var(--muted); font-size: 13px; }
+
+        .game-arrow {
+            display: grid;
+            width: 34px;
+            aspect-ratio: 1;
+            place-items: center;
+            border-radius: 50%;
+            color: var(--green-dark);
+            background: #edf3e9;
+            font-size: 20px;
+        }
+
+        .empty {
+            grid-column: 1 / -1;
+            padding: 36px 16px;
+            border: 1px dashed #b9cabb;
+            border-radius: 8px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        footer {
+            margin-top: 30px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .page { width: min(100% - 28px, 520px); padding-top: 18px; }
+            .top-note { display: none; }
+            .intro { padding: 34px 0 24px; }
+            .intro-copy { max-width: 310px; font-size: 14px; }
+            .spark { top: 26px; right: 8px; }
+            .tools { align-items: stretch; flex-direction: column; }
+            .search-wrap { width: 100%; }
+            .games { grid-template-columns: 1fr; gap: 10px; }
+            .game-link { min-height: 100px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        }
+
+        .page {
+            display: flex;
+            width: min(1440px, calc(100% - 36px));
+            min-height: 100vh;
+            flex-direction: column;
+            padding: 18px 0 16px;
+        }
+
+        .topbar { flex: none; padding-bottom: 14px; }
+
+        .global-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .nav-label {
+            flex: none;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            min-width: 0;
+            flex: 1;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 2px 8px;
+            scrollbar-color: #b9cabb transparent;
+            scrollbar-width: thin;
+        }
+
+        .nav-link {
+            display: flex;
+            min-width: 0;
+            min-height: 48px;
+            flex: 1;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            color: var(--ink);
+            background: var(--white);
+            text-decoration: none;
+            transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+        }
+
+        .nav-link:hover { border-color: #9dbda2; background: #edf3e9; }
+
+        .nav-link[aria-current="page"] {
+            border-color: var(--green-dark);
+            color: white;
+            background: var(--green-dark);
+        }
+
+        .nav-icon { font-size: 20px; }
+        .nav-copy { min-width: 0; }
+        .nav-grade { display: block; margin-bottom: 2px; font-size: 11px; opacity: 0.72; }
+        .nav-title { display: block; overflow-wrap: anywhere; font-size: 13px; font-weight: 700; }
+
+        .workspace {
+            display: flex;
+            min-height: 0;
+            flex: 1;
+            flex-direction: column;
+            padding-top: 14px;
+        }
+
+        .frame-heading {
+            display: flex;
+            min-height: 46px;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 10px;
+        }
+
+        .frame-eyebrow { margin: 0 0 2px; color: var(--green); font-size: 11px; font-weight: 700; }
+        .frame-title { margin: 0; font-size: 18px; line-height: 1.25; }
+
+        .game-frames {
+            position: relative;
+            width: 100%;
+            min-height: 520px;
+            flex: 1;
+        }
+
+        .game-frame {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--white);
+        }
+
+        .game-frame[hidden] { display: none; }
+
+        @media (max-width: 640px) {
+            .page { width: calc(100% - 24px); padding-top: 12px; }
+            .topbar { padding-bottom: 10px; }
+            .brand-mark { width: 34px; }
+            .global-nav { align-items: flex-start; flex-direction: column; gap: 8px; padding: 10px 0; }
+            .nav-links {
+                display: grid;
+                width: 100%;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                overflow: visible;
+                padding: 2px 0;
+            }
+            .nav-link { padding: 8px; }
+            .workspace { padding-top: 10px; }
+            .game-frames { min-height: 65vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <div class="brand"><span class="brand-mark" aria-hidden="true">文</span><span>大O老师中文课</span></div>
+            <span class="top-note">认字 · 词汇 · 游戏练习</span>
+        </header>
+
+        <nav class="global-nav" aria-label="游戏导航">
+            <span class="nav-label">课程游戏</span>
+            <div class="nav-links" id="game-navigation"></div>
+        </nav>
+
+        <main class="workspace">
+            <header class="frame-heading" aria-live="polite">
+                <div>
+                    <p class="frame-eyebrow" id="selected-grade">G1</p>
+                    <h1 class="frame-title" id="selected-title">难字拼图游戏</h1>
+                </div>
+            </header>
+            <div class="game-frames" id="game-frames">
+                <iframe
+                    class="game-frame"
+                    id="game-frame"
+                    data-game-file="g1-difficult-character-puzzle-01.html"
+                    src="./Games/g1-difficult-character-puzzle-01.html"
+                    title="G1 难字拼图游戏"
+                    allow="fullscreen"
+                ></iframe>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const games = [
+            { grade: "G1", title: "难字拼图游戏", file: "g1-difficult-character-puzzle-01.html", type: "拼图认字", icon: "🧩" },
+            { grade: "G2", title: "难字拼图游戏", file: "g2-difficult-character-puzzle-01.html", type: "拼图认字", icon: "🧩" },
+            { grade: "G2", title: "图文配对游戏 01", file: "g2-picture-word-match-01.html", type: "图文配对", icon: "🀄" },
+            { grade: "G2", title: "图文配对游戏 02", file: "g2-picture-word-match-02.html", type: "图文配对", icon: "🀄" },
+            { grade: "G2", title: "打地鼠认字游戏", file: "g2-whack-a-mole-character-recognition-01.html", type: "认字练习", icon: "🔨" }
+        ];
+
+        const navigationElement = document.querySelector("#game-navigation");
+        const framesElement = document.querySelector("#game-frames");
+        const frameElement = document.querySelector("#game-frame");
+        const gradeElement = document.querySelector("#selected-grade");
+        const titleElement = document.querySelector("#selected-title");
+        const frames = new Map([[games[0].file, frameElement]]);
+        let activeGameFile = games[0].file;
+
+        navigationElement.innerHTML = games.map((game, index) => `
+            <a
+                class="nav-link"
+                href="./Games/${encodeURIComponent(game.file)}"
+                data-game-index="${index}"
+                ${index === 0 ? 'aria-current="page"' : ""}
+            >
+                <span class="nav-icon" aria-hidden="true">${game.icon}</span>
+                <span class="nav-copy">
+                    <span class="nav-grade">${game.grade}</span>
+                    <span class="nav-title">${game.title}</span>
+                </span>
+            </a>
+        `).join("");
+
+        function createGameFrame(game, hidden = true) {
+            const frame = document.createElement("iframe");
+            frame.className = "game-frame";
+            frame.dataset.gameFile = game.file;
+            frame.src = `./Games/${encodeURIComponent(game.file)}`;
+            frame.title = `${game.grade} ${game.title}`;
+            frame.allow = "fullscreen";
+            frame.hidden = hidden;
+            return frame;
+        }
+
+        function getOrCreateFrame(game) {
+            let frame = frames.get(game.file);
+            if (!frame) {
+                frame = createGameFrame(game);
+                framesElement.append(frame);
+                frames.set(game.file, frame);
+            }
+            return frame;
+        }
+
+        navigationElement.addEventListener("click", (event) => {
+            const link = event.target.closest(".nav-link");
+            if (!link) return;
+            event.preventDefault();
+
+            const game = games[Number(link.dataset.gameIndex)];
+            const previousFrame = frames.get(activeGameFile);
+            const nextFrame = getOrCreateFrame(game);
+            if (activeGameFile !== game.file) {
+                previousFrame?.contentWindow?.postMessage({ type: "classroom-game", action: "pause" }, "*");
+                if (previousFrame) previousFrame.hidden = true;
+                nextFrame.hidden = false;
+                activeGameFile = game.file;
+            }
+
+            navigationElement.querySelector('[aria-current="page"]')?.removeAttribute("aria-current");
+            link.setAttribute("aria-current", "page");
+            gradeElement.textContent = game.grade;
+            titleElement.textContent = game.title;
+            nextFrame.title = `${game.grade} ${game.title}`;
+        });
+
+    </script>
+</body>
+</html>

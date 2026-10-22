@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大O老师中文课G2-2 词汇复习</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+        
+        body {
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+            background-color: #f0fdf4;
+            background-image: radial-gradient(#bbf7d0 2px, transparent 2px);
+            background-size: 30px 30px;
+            touch-action: manipulation;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 强制隐藏，防止防火墙屏蔽 CSS 导致重叠 */
+        .hidden {
+            display: none !important;
+        }
+
+        .dengxian-light {
+            font-family: 'DengXian Light', '等线 Light', 'DengXian', '等线', sans-serif;
+            font-weight: 300;
+        }
+
+        .kaiti-text {
+            font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
+        }
+
+        .item-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .item-card:active {
+            transform: scale(0.95);
+        }
+
+        .selected {
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+            transform: scale(1.05);
+            background-color: #fffbeb !important;
+        }
+
+        .matched {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+            color: #15803d !important;
+            opacity: 0.7;
+            pointer-events: none;
+            animation: pop 0.4s ease-out;
+        }
+
+        .wrong {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); box-shadow: 0 0 20px #4ade80; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        .hide-board .board-container {
+            filter: blur(10px) brightness(0.8);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center text-gray-800">
+
+    <!-- 开始界面 -->
+    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-green-50 z-50">
+        <div class="bg-white p-8 rounded-3xl shadow-xl text-center max-w-md w-[90%] border-4 border-green-400">
+            <h1 class="text-4xl text-green-600 mb-6 leading-tight drop-shadow-sm dengxian-light">大O老师中文课<br>G2-2 词汇复习</h1>
+            <p class="text-lg text-gray-600 mb-8">点击图片/英文和对应的中文词语配对。<br>每关45秒，连错扣5秒哦！</p>
+            <button onclick="startGame()" class="bg-gradient-to-r from-green-400 to-blue-500 text-white text-2xl px-10 py-4 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 font-bold cursor-pointer">
+                开始游戏 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- 游戏主界面 (修复了高度塌陷) -->
+    <div id="game-screen" class="hidden flex-1 w-full max-w-6xl flex flex-col relative">
+        <!-- 头部信息 -->
+        <div class="flex justify-between items-center p-4 bg-white/80 backdrop-blur shadow-sm z-10 rounded-b-2xl mb-4 border-b-4 border-green-300 mx-2 md:mx-4 shrink-0">
+            <div class="flex flex-col items-center">
+                <span class="text-sm text-gray-500 font-bold uppercase tracking-wider">关卡</span>
+                <span id="level-display" class="text-2xl font-bold text-green-600">1 / ?</span>
+            </div>
+            
+            <div class="flex flex-col items-center bg-red-100 px-6 py-2 rounded-2xl border-2 border-red-300 transition-all duration-300" id="timer-box">
+                <span class="text-sm text-red-500 font-bold">倒计时</span>
+                <span id="timer-display" class="text-3xl font-bold text-red-600">45</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="resetBtn" type="button" title="重置游戏" aria-label="重置游戏" class="w-12 h-12 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white rounded-full shadow-md text-xl transition">
+                    ↻
+                </button>
+                <button onclick="pauseGame()" class="w-12 h-12 flex items-center justify-center bg-yellow-400 text-white rounded-full shadow-md text-xl transform transition hover:scale-105 active:scale-95 border-2 border-yellow-500 cursor-pointer">
+                    ⏸️
+                </button>
+            </div>
+        </div>
+
+        <!-- 棋盘容器 (全面改用稳定的 Flex row，废弃容易出bug的 Grid) -->
+        <div id="main-board-wrapper" class="flex-1 w-full p-2 md:p-4 flex flex-col min-h-0 pb-6 md:pb-10">
+            <div class="board-container flex flex-row gap-4 md:gap-8 flex-1 min-h-0 w-full" id="board">
+                <!-- 左列和右列会动态生成在这里 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 暂停弹窗 -->
+    <div id="pause-screen" class="hidden absolute inset-0 bg-black/60 z-40 flex flex-col items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-xl text-center border-4 border-yellow-400">
+            <h2 class="text-4xl text-yellow-500 mb-6 font-bold">游戏暂停</h2>
+            <button onclick="resumeGame()" class="bg-yellow-400 text-white text-2xl px-10 py-3 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 font-bold cursor-pointer">
+                继续游戏 ▶️
+            </button>
+        </div>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div id="game-over-screen" class="hidden absolute inset-0 bg-red-900/80 z-50 flex flex-col items-center justify-center backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-red-500 max-w-sm w-[90%]">
+            <div class="text-6xl mb-4">😢</div>
+            <h2 class="text-4xl text-red-500 mb-2 font-bold">游戏结束</h2>
+            <p class="text-gray-600 mb-6">时间到了，别灰心，再试一次吧！</p>
+            <button onclick="restartGame()" class="bg-red-500 text-white text-xl px-8 py-3 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 font-bold cursor-pointer">
+                重新开始游戏 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- 胜利弹窗 -->
+    <div id="victory-screen" class="hidden absolute inset-0 bg-green-900/80 z-50 flex flex-col items-center justify-center backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-yellow-400 max-w-md w-[90%]">
+            <div class="text-6xl mb-4 animate-bounce">🏆</div>
+            <h2 class="text-4xl text-green-500 mb-2 font-bold">太棒啦！</h2>
+            <p class="text-gray-600 mb-6 text-lg">你完成了G2-2的全部词汇！<br>大O老师为你点赞！💯</p>
+            <button onclick="restartGame()" class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xl px-8 py-3 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 font-bold cursor-pointer">
+                再玩一次 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- 过关提示 -->
+    <div id="level-clear-msg" class="hidden absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+        <div class="bg-green-500 text-white text-5xl px-10 py-6 rounded-3xl shadow-2xl font-bold animate-bounce border-4 border-white kaiti-text">
+            过关！🌟
+        </div>
+    </div>
+
+    <script>
+        const engSpan = (word) => `<span class="text-blue-600 font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl break-words text-center px-1 tracking-wider leading-tight pointer-events-none">${word}</span>`;
+
+        const fullVocabulary = [
+            { id: 1, word: '一粒种子', emoji: '🌱' },
+            { id: 2, word: '泥土', emoji: engSpan('DIRT') },
+            { id: 3, word: '春风', emoji: '🌬️' },
+            { id: 4, word: '河水', emoji: '🌊' },
+            { id: 5, word: '太阳', emoji: '☀️' },
+            { id: 6, word: '夏天', emoji: '🏖️' },
+            { id: 7, word: '宝宝', emoji: '👶' },
+            { id: 8, word: '矮子', emoji: engSpan('DWARF') },
+            { id: 9, word: '雪人', emoji: '⛄' },
+            { id: 10, word: '娃娃', emoji: '🎎' },
+            { id: 11, word: '医生', emoji: '👨‍⚕️' },
+            { id: 12, word: '别人', emoji: engSpan('OTHERS') },
+            { id: 13, word: '他俩', emoji: engSpan('THEY TWO') },
+            { id: 14, word: '声音', emoji: '🔊' },
+            { id: 15, word: '世界', emoji: '🌍' },
+            { id: 16, word: '谜语', emoji: engSpan('RIDDLE') },
+            { id: 17, word: '皮球', emoji: '⚽' },
+            { id: 18, word: '身子', emoji: engSpan('BODY') },
+            { id: 19, word: '肠子', emoji: engSpan('INTESTINES') },
+            { id: 20, word: '冠子', emoji: engSpan('CREST') },
+            { id: 21, word: '花外衣', emoji: engSpan('FLORAL COAT') },
+            { id: 22, word: '脖子', emoji: engSpan('NECK') },
+            { id: 23, word: '金黄脚', emoji: engSpan('GOLDEN-YELLOW FEET') },
+            { id: 24, word: '长嘴巴', emoji: engSpan('LONG BEAK') },
+            { id: 25, word: '果园', emoji: engSpan('ORCHARD') },
+            { id: 26, word: '鼓眼睛', emoji: engSpan('BULGING EYES') },
+            { id: 27, word: '果树', emoji: '🌳' },
+            { id: 28, word: '肚皮', emoji: engSpan('BELLY') },
+            { id: 29, word: '稻田', emoji: '🌾' },
+            { id: 30, word: '害虫', emoji: '🐛' },
+            { id: 31, word: '外表', emoji: engSpan('APPEARANCE') },
+            { id: 32, word: '事情', emoji: engSpan('MATTER') },
+            { id: 33, word: '围墙', emoji: '🧱' },
+            { id: 34, word: '前腿', emoji: engSpan('FRONT LEG') },
+            { id: 35, word: '蚯蚓', emoji: engSpan('EARTHWORM') },
+            { id: 36, word: '公鸡', emoji: '🐓' },
+            { id: 37, word: '啄木鸟', emoji: engSpan('WOODPECKER') },
+            { id: 38, word: '蜜蜂', emoji: '🐝' },
+            { id: 39, word: '蛇', emoji: '🐍' },
+            { id: 40, word: '骆驼', emoji: '🐪' },
+            { id: 41, word: '睡在', emoji: engSpan('SLEEP ON') },
+            { id: 42, word: '醒过来', emoji: '🥱' },
+            { id: 43, word: '觉得', emoji: engSpan('FEEL') },
+            { id: 44, word: '口渴', emoji: '🥵' },
+            { id: 45, word: '喝水', emoji: '🚰' },
+            { id: 46, word: '吹着', emoji: '🌬️' },
+            { id: 47, word: '告诉', emoji: engSpan('TELL') },
+            { id: 48, word: '回答', emoji: engSpan('ANSWER') },
+            { id: 49, word: '让', emoji: engSpan('LET') },
+            { id: 50, word: '帮', emoji: '🤝' },
+            { id: 51, word: '松一松', emoji: engSpan('LOOSEN') },
+            { id: 52, word: '唱歌', emoji: '🎤' },
+            { id: 53, word: '喜欢', emoji: '❤️' },
+            { id: 54, word: '拍', emoji: '👏' },
+            { id: 55, word: '跳', emoji: '🏃' },
+            { id: 56, word: '画图', emoji: '🖍️' },
+            { id: 57, word: '写字', emoji: '✍️' },
+            { id: 58, word: '变成', emoji: engSpan('BECOME') },
+            { id: 59, word: '不怕', emoji: engSpan('NOT AFRAID') },
+            { id: 60, word: '汗直淌', emoji: '💦' },
+            { id: 61, word: '自以为', emoji: engSpan('THINK ONESELF') },
+            { id: 62, word: '挺着胸', emoji: engSpan('PUFF CHEST') },
+            { id: 63, word: '生病', emoji: '🤒' },
+            { id: 64, word: '治病', emoji: '🩺' },
+            { id: 65, word: '采蜜', emoji: '🍯' },
+            { id: 66, word: '捉虫', emoji: engSpan('CATCH BUGS') },
+            { id: 67, word: '伤心', emoji: '💔' },
+            { id: 68, word: '不理', emoji: engSpan('IGNORE') },
+            { id: 69, word: '做事', emoji: engSpan('DO THINGS') },
+            { id: 70, word: '催', emoji: engSpan('URGE') },
+            { id: 71, word: '埋', emoji: engSpan('BURY') },
+            { id: 72, word: '打死', emoji: engSpan('BEAT TO DEATH') },
+            { id: 73, word: '挖', emoji: '⛏️' },
+            { id: 74, word: '擦眼泪', emoji: engSpan('WIPE TEARS') },
+            { id: 75, word: '想到', emoji: engSpan('THINK OF') },
+            { id: 76, word: '长大', emoji: engSpan('GROW UP') },
+            { id: 77, word: '散步', emoji: '🚶' },
+            { id: 78, word: '证明', emoji: engSpan('PROVE') },
+            { id: 79, word: '伸出', emoji: engSpan('STRETCH OUT') },
+            { id: 80, word: '举起', emoji: '🏋️' },
+            { id: 81, word: '扒在', emoji: engSpan('CLING TO') },
+            { id: 82, word: '不肯', emoji: engSpan('REFUSE') },
+            { id: 83, word: '认输', emoji: engSpan('ADMIT DEFEAT') },
+            { id: 84, word: '跪下', emoji: '🧎' },
+            { id: 85, word: '低下头', emoji: engSpan('LOWER HEAD') },
+            { id: 86, word: '请', emoji: engSpan('PLEASE') },
+            { id: 87, word: '评理', emoji: engSpan('JUDGE') },
+            { id: 88, word: '争论不休', emoji: engSpan('ARGUE ENDLESSLY') },
+            { id: 89, word: '暖和', emoji: engSpan('WARM') },
+            { id: 90, word: '舒服', emoji: engSpan('COMFORTABLE') },
+            { id: 91, word: '亮得很', emoji: '🌟' },
+            { id: 92, word: '热闹', emoji: engSpan('LIVELY') },
+            { id: 93, word: '光明', emoji: engSpan('BRIGHTNESS') },
+            { id: 94, word: '圆头圆脑', emoji: engSpan('ROUND HEAD') },
+            { id: 95, word: '重', emoji: engSpan('HEAVY') },
+            { id: 96, word: '高', emoji: engSpan('TALL') },
+            { id: 97, word: '长长的', emoji: engSpan('LONG') },
+            { id: 98, word: '细细的', emoji: engSpan('THIN') },
+            { id: 99, word: '又白又胖', emoji: engSpan('WHITE & CHUBBY') },
+            { id: 100, word: '冷', emoji: '🥶' },
+            { id: 101, word: '美丽', emoji: engSpan('BEAUTIFUL') },
+            { id: 102, word: '油亮', emoji: engSpan('SHINY') },
+            { id: 103, word: '饱', emoji: engSpan('FULL') },
+            { id: 104, word: '惭愧', emoji: '😳' },
+            { id: 105, word: '天亮', emoji: '🌅' },
+            { id: 106, word: '难过', emoji: engSpan('SAD') },
+            { id: 107, word: '错了', emoji: '❌' },
+            { id: 108, word: '许多', emoji: engSpan('MANY') },
+            { id: 109, word: '又窄又矮', emoji: engSpan('NARROW & SHORT') },
+            { id: 110, word: '绿油油', emoji: engSpan('LUSH GREEN') },
+            { id: 111, word: '轻轻', emoji: engSpan('LIGHTLY') },
+            { id: 112, word: '连忙', emoji: engSpan('PROMPTLY') },
+            { id: 113, word: '赶快', emoji: engSpan('HURRY') },
+            { id: 114, word: '得意洋洋', emoji: engSpan('TRIUMPHANT') },
+            { id: 115, word: '大摇大摆', emoji: engSpan('SWAGGER') },
+            { id: 116, word: '不久', emoji: engSpan('SOON') },
+            { id: 117, word: '很快', emoji: '🏎️' },
+            { id: 118, word: '大模大样', emoji: engSpan('OSTENTATIOUS') },
+            { id: 119, word: '外面', emoji: engSpan('OUTSIDE') },
+            { id: 120, word: '眼前', emoji: engSpan('BEFORE EYES') },
+            { id: 121, word: '路边', emoji: engSpan('ROADSIDE') },
+            { id: 122, word: '旁边', emoji: engSpan('BESIDE') },
+            { id: 123, word: '四面', emoji: engSpan('ALL SIDES') },
+            { id: 124, word: '现在', emoji: '⌚' },
+            { id: 125, word: '时候', emoji: '⏱️' },
+            { id: 126, word: '怎么样', emoji: '🤷' },
+            { id: 127, word: '这么', emoji: engSpan('SO') },
+            { id: 128, word: '突然', emoji: '❗' },
+            { id: 129, word: '整天', emoji: engSpan('ALL DAY') },
+            { id: 130, word: '谁美', emoji: engSpan('WHO IS PRETTIER') },
+            { id: 131, word: '对不起', emoji: engSpan('SORRY') },
+            { id: 132, word: '为什么', emoji: '❓' },
+            { id: 133, word: '从此以后', emoji: engSpan('FROM THEN ON') },
+            { id: 134, word: '每天', emoji: '📅' },
+            { id: 135, word: '因为', emoji: engSpan('BECAUSE') },
+            { id: 136, word: '不能', emoji: '🚫' },
+            { id: 137, word: '一遍', emoji: '1️⃣' },
+            { id: 138, word: '有一次', emoji: engSpan('ONCE') },
+            { id: 139, word: '今天', emoji: '📆' },
+            { id: 140, word: '所以', emoji: engSpan('THEREFORE') },
+            { id: 141, word: '说法', emoji: engSpan('STATEMENT') },
+            { id: 142, word: '真的', emoji: engSpan('REALLY') },
+            { id: 143, word: '好事', emoji: '👍' },
+            { id: 144, word: '可以', emoji: engSpan('CAN') },
+            { id: 145, word: '到底', emoji: engSpan('AFTER ALL') },
+            { id: 146, word: '各有各的', emoji: engSpan('EACH HAS OWN') },
+            { id: 147, word: '如果', emoji: engSpan('IF') },
+            { id: 148, word: '长处', emoji: engSpan('STRENGTH') },
+            { id: 149, word: '短处', emoji: engSpan('SHORTCOMING') },
+            { id: 150, word: '既', emoji: engSpan('BOTH') }
+        ];
+
+        let levels = [];
+        let currentLevelIndex = 0;
+        let currentLevelData = [];
+        
+        let timeLeft = 45;
+        let timerInterval = null;
+        let matchedPairsCount = 0;
+
+        let selectedEmojiCard = null;
+        let selectedWordCard = null;
+        let isProcessingMatch = false;
+
+        function shuffleArray(array) {
+            let curId = array.length;
+            while (0 !== curId) {
+                let randId = Math.floor(Math.random() * curId);
+                curId -= 1;
+                let tmp = array[curId];
+                array[curId] = array[randId];
+                array[randId] = tmp;
+            }
+            return array;
+        }
+
+        function chunkArray(array, size) {
+            const chunked_arr = [];
+            let index = 0;
+            while (index < array.length) {
+                chunked_arr.push(array.slice(index, size + index));
+                index += size;
+            }
+            return chunked_arr;
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            const shuffledVocab = shuffleArray([...fullVocabulary]);
+            levels = chunkArray(shuffledVocab, 5); 
+            
+            currentLevelIndex = 0;
+            loadLevel();
+        }
+
+        function loadLevel() {
+            if (currentLevelIndex >= levels.length) {
+                showVictory();
+                return;
+            }
+
+            currentLevelData = levels[currentLevelIndex];
+            matchedPairsCount = 0;
+            timeLeft = 45; 
+            
+            updateHeaderUI();
+            renderBoard();
+            startTimer();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            let emojis = shuffleArray([...currentLevelData]);
+            let words = shuffleArray([...currentLevelData]);
+
+            // 改用 flex-1 占据一半宽度
+            const emojiCol = document.createElement('div');
+            emojiCol.className = 'flex-1 flex flex-col gap-2 md:gap-4 justify-between h-full min-h-0 w-1/2';
+            emojis.forEach(item => {
+                const el = createCard(item, 'emoji');
+                emojiCol.appendChild(el);
+            });
+
+            const wordCol = document.createElement('div');
+            wordCol.className = 'flex-1 flex flex-col gap-2 md:gap-4 justify-between h-full min-h-0 w-1/2';
+            words.forEach(item => {
+                const el = createCard(item, 'word');
+                wordCol.appendChild(el);
+            });
+
+            board.appendChild(emojiCol);
+            board.appendChild(wordCol);
+        }
+
+        function createCard(item, type) {
+            const div = document.createElement('div');
+            div.className = 'item-card bg-white border-4 border-gray-200 rounded-2xl flex-1 flex items-center justify-center p-2 text-center select-none w-full min-h-0 shadow-sm'; 
+            div.dataset.id = item.id;
+            div.dataset.type = type;
+
+            if (type === 'emoji') {
+                div.innerHTML = `<span class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl pointer-events-none leading-none flex items-center justify-center w-full h-full">${item.emoji}</span>`;
+            } else {
+                div.innerHTML = `<span class="kaiti-text text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 pointer-events-none">${item.word}</span>`;
+            }
+
+            // 直接为卡片对象绑定原生点击，最稳定
+            div.onclick = function() {
+                handleCardClick(this);
+            };
+            return div;
+        }
+
+        function handleCardClick(card) {
+            if (isProcessingMatch || card.classList.contains('matched')) return;
+
+            const type = card.dataset.type;
+
+            if (card.classList.contains('selected')) {
+                card.classList.remove('selected');
+                if (type === 'emoji') selectedEmojiCard = null;
+                else selectedWordCard = null;
+                return;
+            }
+
+            if (type === 'emoji') {
+                if (selectedEmojiCard) selectedEmojiCard.classList.remove('selected');
+                selectedEmojiCard = card;
+            } else {
+                if (selectedWordCard) selectedWordCard.classList.remove('selected');
+                selectedWordCard = card;
+            }
+            card.classList.add('selected');
+
+            if (selectedEmojiCard && selectedWordCard) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isProcessingMatch = true;
+            const emojiId = selectedEmojiCard.dataset.id;
+            const wordId = selectedWordCard.dataset.id;
+
+            if (emojiId === wordId) {
+                selectedEmojiCard.classList.remove('selected');
+                selectedWordCard.classList.remove('selected');
+                
+                selectedEmojiCard.classList.add('matched');
+                selectedWordCard.classList.add('matched');
+
+                matchedPairsCount++;
+                selectedEmojiCard = null;
+                selectedWordCard = null;
+                isProcessingMatch = false;
+
+                if (matchedPairsCount === currentLevelData.length) {
+                    handleLevelComplete();
+                }
+            } else {
+                selectedEmojiCard.classList.add('wrong');
+                selectedWordCard.classList.add('wrong');
+
+                timeLeft -= 5;
+                if (timeLeft < 0) timeLeft = 0; 
+                updateHeaderUI();
+
+                const timerBox = document.getElementById('timer-box');
+                timerBox.classList.add('scale-110', 'bg-red-200');
+                setTimeout(() => {
+                    timerBox.classList.remove('scale-110', 'bg-red-200');
+                }, 300);
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    setTimeout(() => {
+                        showGameOver();
+                    }, 400); 
+                }
+
+                setTimeout(() => {
+                    if (selectedEmojiCard) selectedEmojiCard.classList.remove('wrong', 'selected');
+                    if (selectedWordCard) selectedWordCard.classList.remove('wrong', 'selected');
+                    selectedEmojiCard = null;
+                    selectedWordCard = null;
+                    isProcessingMatch = false;
+                }, 500);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft < 0) timeLeft = 0;
+                
+                updateHeaderUI();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    showGameOver();
+                }
+            }, 1000);
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('level-display').innerText = `${currentLevelIndex + 1} / ${levels.length}`;
+            document.getElementById('timer-display').innerText = timeLeft;
+            
+            const timerEl = document.getElementById('timer-display');
+            if (timeLeft <= 10) {
+                timerEl.classList.add('animate-pulse', 'text-red-600');
+            } else {
+                timerEl.classList.remove('animate-pulse', 'text-red-600');
+                timerEl.classList.add('text-gray-800');
+            }
+        }
+
+        function handleLevelComplete() {
+            clearInterval(timerInterval);
+            const msg = document.getElementById('level-clear-msg');
+            msg.classList.remove('hidden');
+            
+            setTimeout(() => {
+                msg.classList.add('hidden');
+                currentLevelIndex++;
+                loadLevel();
+            }, 1500);
+        }
+
+        function pauseGame() {
+            clearInterval(timerInterval);
+            document.getElementById('main-board-wrapper').classList.add('hide-board');
+            document.getElementById('pause-screen').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            document.getElementById('pause-screen').classList.add('hidden');
+            document.getElementById('main-board-wrapper').classList.remove('hide-board');
+            startTimer();
+        }
+
+        function showGameOver() {
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('main-board-wrapper').classList.add('hide-board');
+        }
+
+        function showVictory() {
+            clearInterval(timerInterval);
+            document.getElementById('victory-screen').classList.remove('hidden');
+            document.getElementById('main-board-wrapper').classList.add('hide-board');
+        }
+
+        function restartGame() {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('pause-screen').classList.add('hidden');
+            
+            document.getElementById('main-board-wrapper').classList.remove('hide-board');
+            
+            startGame();
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (window.confirm('确认重置游戏？当前进度将被清除。')) window.location.reload();
+        });
+
+        window.addEventListener('message', event => {
+            if (event.source !== window.parent || event.data?.type !== 'classroom-game' || event.data.action !== 'pause') return;
+            const startScreen = document.getElementById('start-screen');
+            const pauseScreen = document.getElementById('pause-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const victoryScreen = document.getElementById('victory-screen');
+            if (startScreen.classList.contains('hidden') && pauseScreen.classList.contains('hidden') && gameOverScreen.classList.contains('hidden') && victoryScreen.classList.contains('hidden')) {
+                pauseGame();
+            }
+        });
+
+        // 屏蔽浏览器默认缩放手势，让游戏在平板上操作更丝滑
+        document.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
