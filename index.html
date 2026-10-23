@@ -274,6 +274,27 @@
             font-size: 12px;
         }
 
+        .image-version {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            z-index: 10;
+            padding: 6px 9px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--muted);
+            background: var(--white);
+            box-shadow: 0 2px 8px #20392f18;
+            font-size: 11px;
+            pointer-events: none;
+        }
+
+        .image-version span {
+            color: var(--green-dark);
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+
         @media (max-width: 640px) {
             .page { width: min(100% - 28px, 520px); padding-top: 18px; }
             .top-note { display: none; }
@@ -444,6 +465,8 @@
         </main>
     </div>
 
+    <div class="image-version" aria-label="Image version">Version <span id="image-version">dev</span></div>
+
     <script>
         const games = [
             { grade: "G1", title: "难字拼图游戏", file: "g1-difficult-character-puzzle-01.html", type: "拼图认字", icon: "🧩" },
@@ -518,6 +541,13 @@
             titleElement.textContent = game.title;
             nextFrame.title = `${game.grade} ${game.title}`;
         });
+
+        fetch("./version.txt")
+            .then((response) => response.ok ? response.text() : "")
+            .then((version) => {
+                if (version.trim()) document.querySelector("#image-version").textContent = version.trim();
+            })
+            .catch(() => {});
 
     </script>
 </body>
