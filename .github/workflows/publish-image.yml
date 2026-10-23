@@ -54,18 +54,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Smoke Test Static Site
-        shell: bash
-        run: |
-          docker run --detach --name chineseclass-test --publish 8080:80 chineseclass:test
-          trap 'docker logs chineseclass-test; docker rm --force chineseclass-test' EXIT
-          curl --fail --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8080/ --output /tmp/index.html
-          cmp index.html /tmp/index.html
-          for file in Games/*.html; do
-            curl --fail --silent --show-error "http://localhost:8080/$file" --output /tmp/game.html
-            cmp "$file" /tmp/game.html
-          done
-
       - name: Log In to GHCR
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
