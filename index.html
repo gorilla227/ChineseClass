@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#f4f7ee">
     <title>大O老师中文课 | 游戏练习</title>
     <style>
@@ -367,7 +367,7 @@
         .picker-heading { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 10px; }
         .picker-heading h2 { font-size: 20px; }
         .picker-filters { display: grid; flex: none; grid-template-columns: minmax(0, 1fr) 100px; gap: 8px; padding: 0 18px 12px; }
-        .picker-search, .picker-grade { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: white; font-size: 14px; }
+        .picker-search, .picker-grade { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: white; font-size: 16px; }
         .picker-search:focus, .picker-grade:focus { outline: 2px solid var(--green); outline-offset: 1px; }
         .picker-count { flex: none; margin: 0; padding: 0 18px 10px; color: var(--muted); font-size: 12px; }
         .picker-empty { margin: 0; padding: 28px 18px; color: var(--muted); text-align: center; font-size: 14px; }
@@ -521,11 +521,11 @@
 
     <dialog class="game-picker" id="game-picker" aria-labelledby="game-picker-title">
         <div class="picker-heading">
-            <h2 id="game-picker-title">选择游戏</h2>
+            <h2 id="game-picker-title" tabindex="-1" autofocus>选择游戏</h2>
             <button class="picker-close" id="game-picker-close" type="button" aria-label="关闭" title="关闭">×</button>
         </div>
         <div class="picker-filters">
-            <input class="picker-search" id="game-picker-search" type="search" placeholder="搜索游戏" aria-label="搜索游戏" autocomplete="off" autofocus>
+            <input class="picker-search" id="game-picker-search" type="search" placeholder="搜索游戏" aria-label="搜索游戏" autocomplete="off">
             <select class="picker-grade" id="game-picker-grade" aria-label="年级"><option value="">全部年级</option></select>
         </div>
         <p class="picker-count" id="game-picker-count" role="status"></p>
@@ -598,7 +598,10 @@
             navigationElement.scrollTop = 0;
             pickerElement.showModal();
             pickerTrigger.setAttribute("aria-expanded", "true");
-            pickerSearch.focus();
+            const initialFocus = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+                ? pickerSearch
+                : document.querySelector("#game-picker-title");
+            initialFocus.focus({ preventScroll: true });
         });
         document.querySelector("#game-picker-close").addEventListener("click", () => pickerElement.close());
         pickerElement.addEventListener("keydown", (event) => {
