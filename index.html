@@ -431,6 +431,36 @@
             .workspace { padding-top: 10px; }
             .game-frames { min-height: 65vh; }
         }
+        .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) { height: 100dvh; min-height: 0; }
+        .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .game-frames { min-height: 0; }
+        .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .frame-heading { flex-shrink: 0; }
+
+        @media (max-width: 1024px) {
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) {
+                height: 100dvh;
+                min-height: 0;
+                padding: 6px 0;
+            }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .topbar { padding-bottom: 4px; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .global-nav { flex: none; padding: 4px 0; gap: 0; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-label { display: none; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-links {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 4px;
+                padding: 0;
+                overflow: visible;
+            }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-link { min-height: 38px; padding: 4px; gap: 4px; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-icon { display: none; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-grade { margin: 0; font-size: 10px; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-title { font-size: 11px; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .workspace { padding-top: 4px; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .frame-heading { display: none; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .game-frames { min-height: 0; }
+            .topbar { padding-right: 112px; }
+            .image-version { top: 6px; right: 6px; bottom: auto; padding: 2px 5px; font-size: 10px; }
+        }
     </style>
 </head>
 <body>

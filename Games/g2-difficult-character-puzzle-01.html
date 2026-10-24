@@ -84,6 +84,101 @@
         }
 
         /* Kai Font Stack for characters */
+        @media (min-width: 1025px) {
+            body { height: 100dvh; min-height: 0 !important; padding: 12px !important; }
+            body > div:first-child { width: 100%; max-width: 1440px; height: 100%; min-height: 0; }
+            body.embedded-game { padding: 0 !important; background: white; }
+            body.embedded-game > div:first-child { max-width: none; border: 0; border-radius: 0; box-shadow: none; }
+            body.embedded-game > div:first-child > div:first-child { display: none; }
+            body > div:first-child > div:first-child { padding: 8px; }
+            body > div:first-child > div:nth-child(2) {
+                flex: 1;
+                min-height: 0;
+                padding: 24px;
+                gap: 32px;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr);
+            }
+            body > div:first-child > div:nth-child(2) > div:first-child { min-width: 0; gap: 16px; justify-content: center; }
+            body > div:first-child > div:nth-child(2) > div:first-child > div { padding: 12px; gap: 8px; }
+            body > div:first-child > div:nth-child(2) > div:first-child > div:first-child { min-height: min(240px, 40dvh); }
+            body > div:first-child > div:nth-child(2) > div:first-child .h-px { margin: 0; }
+            #refChar { font-size: 96px; line-height: 1; }
+            #refPinyin { font-size: 32px; line-height: 1.2; }
+            #refEnglish { overflow-wrap: anywhere; font-size: 16px; }
+            #pauseBtn, #resetBtn { padding: 8px 12px; }
+            #puzzleAreaContainer {
+                min-height: 0;
+                container-type: inline-size;
+                --tile-size: min(160px, calc((100cqw - 42px) / 4), calc((100dvh - 220px) / 3));
+            }
+            .embedded-game #puzzleAreaContainer { --tile-size: min(160px, calc((100cqw - 42px) / 4), calc((100dvh - 120px) / 3)); }
+            #puzzleArea { height: 100%; min-height: 0; justify-content: center; }
+            #gridContainer { margin-bottom: 16px; }
+            #puzzleArea > div:last-child { flex: none; min-height: 0; width: max-content; max-width: 100%; }
+            #poolContainer { min-height: 0; flex-grow: 0; flex-wrap: nowrap; gap: 8px; padding: 8px; }
+            .drop-zone, .piece { width: var(--tile-size); height: var(--tile-size); flex-shrink: 0; }
+        }
+
+        @media (max-width: 1024px) {
+            body { height: 100dvh; min-height: 0 !important; padding: 6px !important; }
+            body > div:first-child { height: 100%; min-height: 0; }
+            body > div:first-child > div:first-child { padding: 6px; }
+            h1 { font-size: 18px !important; line-height: 24px !important; }
+            h2 { font-size: 12px !important; line-height: 18px !important; }
+            body > div:first-child > div:nth-child(2) {
+                flex: 1;
+                min-height: 0;
+                padding: 8px;
+                gap: 8px;
+                grid-template-rows: auto minmax(0, 1fr);
+            }
+            body > div:first-child > div:nth-child(2) > div:first-child { gap: 8px; min-width: 0; }
+            body > div:first-child > div:nth-child(2) > div:first-child > div { padding: 8px; gap: 6px; }
+            body > div:first-child > div:nth-child(2) > div:first-child .h-px { margin: 0; }
+            #refChar { font-size: 44px; line-height: 1; }
+            #refPinyin { font-size: 20px; line-height: 1.2; }
+            #refEnglish { font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; }
+            #timerDisplay { font-size: 24px; line-height: 1.2; }
+            #pauseBtn, #resetBtn { padding: 6px 10px; border-radius: 8px; }
+            #levelDisplay { padding: 4px 8px; }
+            #puzzleAreaContainer {
+                min-height: 0;
+                --tile-size: min(100px, calc((100vw - 64px) / 4), calc((100dvh - 380px) / 3));
+            }
+            #puzzleArea { height: 100%; min-height: 0; justify-content: center; }
+            #gridContainer { margin-bottom: 8px; }
+            #puzzleArea > div:last-child { flex: none; min-height: 0; }
+            #poolContainer { min-height: 0; flex-grow: 0; flex-wrap: nowrap; gap: 4px; padding: 6px; }
+            .drop-zone, .piece { width: var(--tile-size); height: var(--tile-size); flex-shrink: 0; }
+            #resultModal > div { max-height: calc(100dvh - 16px); padding: 12px; }
+        }
+
+        @media (max-width: 1024px) and (orientation: landscape) {
+            body > div:first-child > div:nth-child(2) {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr);
+            }
+            #puzzleAreaContainer {
+                --tile-size: min(80px, calc((50vw - 64px) / 4), calc((100dvh - 120px) / 3));
+            }
+        }
+
+        @media (max-width: 1024px) and (max-height: 500px) {
+            body > div:first-child > div:first-child { display: none; }
+            body > div:first-child > div:nth-child(2) > div:first-child > div { padding: 6px; gap: 4px; }
+            body > div:first-child > div:nth-child(2) > div:first-child > div:first-child > div:first-child { display: none; }
+            #puzzleAreaContainer {
+                --tile-size: min(80px, calc((100vw - 64px) / 4), calc((100dvh - 310px) / 3));
+            }
+        }
+
+        @media (max-width: 1024px) and (max-height: 500px) and (orientation: landscape) {
+            #puzzleAreaContainer {
+                --tile-size: min(80px, calc((50vw - 64px) / 4), calc((100dvh - 70px) / 3));
+            }
+        }
+
         .font-kai {
             font-family: 'KaiTi', 'STKaiti', 'BiauKai', '楷体', '楷体_GB2312', serif;
         }
@@ -135,14 +230,14 @@
                     
                     <div class="h-px bg-slate-100 w-full my-1"></div>
 
-                    <div class="flex justify-between items-center w-full">
+                    <div class="flex flex-wrap gap-3 justify-between items-center w-full">
                         <div class="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span class="text-3xl font-mono font-bold tracking-wider" id="timerDisplay">00:30</span>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 shrink-0 whitespace-nowrap">
                             <button id="resetBtn" type="button" class="px-4 py-2.5 border-2 border-rose-200 rounded-xl bg-white text-sm font-bold text-rose-700 hover:bg-rose-50 transition-all shadow-sm active:scale-95">↻ 重置</button>
                             <button id="pauseBtn" class="px-5 py-2.5 border-2 border-slate-200 rounded-xl bg-slate-50 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed uppercase shadow-sm active:scale-95" disabled>
                                 暂停 (Pause)
@@ -159,7 +254,7 @@
                 
                 <!-- Paused Overlay Text (Positioned absolutely over the puzzle area) -->
                 <div class="paused-overlay absolute inset-0 z-20 items-center justify-center">
-                    <span id="pausedLabel" class="bg-slate-900/90 text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest text-lg backdrop-blur-md">游戏暂停</span>
+                    <button id="pausedLabel" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg text-lg focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-blue-400">开始游戏</button>
                 </div>
 
                 <!-- The actual puzzle pieces that get blurred -->
@@ -215,6 +310,7 @@
     </div>
 
     <script>
+        if (window.self !== window.top) document.body.classList.add('embedded-game');
         // --- Game Configuration & Dictionary ---
         const LEVEL_DATA = [
             { char: '捞', pinyin: 'lāo', english: 'scoop / dredge' },
@@ -413,11 +509,12 @@
                 puzzleAreaContainer.classList.add('is-paused-container');
                 puzzleArea.classList.add('is-paused');
             }
-            pausedLabel.innerText = startImmediately ? '游戏暂停' : '点击开始游戏';
+            pausedLabel.innerText = startImmediately ? '继续游戏' : '开始游戏';
             
             updateTimerUI();
             pauseBtn.disabled = false;
-            pauseBtn.innerText = startImmediately ? '暂停 (Pause)' : '开始游戏';
+            pauseBtn.hidden = !startImmediately;
+            pauseBtn.innerText = '暂停游戏';
             pauseBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
             pauseBtn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
             
@@ -458,11 +555,12 @@
 
         function togglePause() {
             if (!isPlaying) {
+                pauseBtn.hidden = false;
                 isPlaying = true;
                 isPaused = false;
                 puzzleAreaContainer.classList.remove('is-paused-container');
                 puzzleArea.classList.remove('is-paused');
-                pauseBtn.innerText = '暂停 (Pause)';
+                pauseBtn.innerText = '暂停游戏';
                 pauseBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
                 pauseBtn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
                 if (timeRemaining > 0 && !timerInterval) {
@@ -473,13 +571,13 @@
             isPaused = !isPaused;
             
             if (isPaused) {
-                pausedLabel.innerText = '游戏暂停';
+                pausedLabel.innerText = '继续游戏';
                 // Apply visual paused state specifically to the puzzle area
                 puzzleAreaContainer.classList.add('is-paused-container');
                 puzzleArea.classList.add('is-paused');
                 
                 // Update Button UI to 'Resume'
-                pauseBtn.innerText = '恢复 (Resume)';
+                pauseBtn.innerText = '继续游戏';
                 pauseBtn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
                 pauseBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
                 
@@ -494,7 +592,7 @@
                 puzzleArea.classList.remove('is-paused');
                 
                 // Update Button UI to 'Pause'
-                pauseBtn.innerText = '暂停 (Pause)';
+                pauseBtn.innerText = '暂停游戏';
                 pauseBtn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
                 pauseBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
                 
@@ -796,6 +894,7 @@
 
         // --- Listeners ---
         pauseBtn.addEventListener('click', togglePause);
+        pausedLabel.addEventListener('click', togglePause);
         document.getElementById('resetBtn').addEventListener('click', () => {
             if (window.confirm('确认重置游戏？当前进度将被清除。')) window.location.reload();
         });
