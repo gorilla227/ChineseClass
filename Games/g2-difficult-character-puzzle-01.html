@@ -25,13 +25,15 @@
             box-sizing: border-box;
         }
 
-        .drop-zone.drag-over {
-            background-color: #f1f5f9;
-            border-color: #94a3b8;
+        .drop-zone.drag-over, .pool-area.drag-over {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
         }
 
         /* Puzzle Pieces */
         .piece {
+            touch-action: none;
+            -webkit-touch-callout: none;
             width: 100px;
             height: 100px;
             cursor: grab;
@@ -309,6 +311,7 @@
         </div>
     </div>
 
+    <script src="./puzzle-touch.js"></script>
     <script>
         if (window.self !== window.top) document.body.classList.add('embedded-game');
         // --- Game Configuration & Dictionary ---
@@ -461,6 +464,17 @@
         const refEnglish = document.getElementById('refEnglish');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const speakBtn = document.getElementById('speakBtn');
+        const cancelTouchDrag = installPuzzleTouch({
+            area: puzzleArea,
+            pool: poolContainer,
+            isActive: () => isPlaying && !isPaused,
+            onTap: piece => handlePieceClick.call(piece, { stopPropagation() {} }),
+            onDragStart: () => {
+                selectedPiece?.classList.remove('selected');
+                selectedPiece = null;
+            },
+            onDrop: checkWinCondition
+        });
 
         // --- Core Game Functions ---
 
@@ -554,6 +568,7 @@
         }
 
         function togglePause() {
+            cancelTouchDrag();
             if (!isPlaying) {
                 pauseBtn.hidden = false;
                 isPlaying = true;
@@ -604,6 +619,7 @@
         }
 
         function resetBoard() {
+            cancelTouchDrag();
             dropZones.forEach(zone => {
                 zone.innerHTML = '';
                 zone.classList.remove('drag-over');
