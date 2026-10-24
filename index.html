@@ -324,25 +324,63 @@
         .global-nav {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            flex: none;
+            min-height: 66px;
             gap: 16px;
-            padding: 14px 0;
+            padding: 10px 0;
             border-bottom: 1px solid var(--line);
         }
 
-        .nav-label {
+        .nav-current { min-width: 0; }
+        .nav-current-grade { margin: 0 0 2px; color: var(--green); font-size: 11px; font-weight: 700; }
+        .nav-current-title { margin: 0; overflow-wrap: anywhere; font-size: 16px; line-height: 1.3; }
+        .picker-trigger, .picker-close {
             flex: none;
-            color: var(--muted);
-            font-size: 13px;
-            font-weight: 700;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--ink);
+            background: var(--white);
+            cursor: pointer;
         }
+        .picker-trigger { min-height: 40px; padding: 0 12px; font-size: 13px; font-weight: 700; }
+        .picker-trigger:hover, .picker-close:hover { border-color: var(--green); background: var(--mint); }
+        .picker-close { width: 40px; height: 40px; font-size: 24px; }
+        .picker-trigger:focus-visible, .picker-close:focus-visible, .nav-link:focus-visible {
+            outline: 3px solid var(--coral);
+            outline-offset: 2px;
+        }
+        .game-picker {
+            width: min(560px, calc(100% - 24px));
+            max-height: calc(100dvh - 32px);
+            margin: auto;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--ink);
+            background: var(--white);
+            box-shadow: 0 20px 70px #20392f33;
+            overflow: hidden;
+        }
+        .game-picker[open] { display: flex; flex-direction: column; }
+        .game-picker::backdrop { background: #20392f66; }
+        .picker-heading { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 10px; }
+        .picker-heading h2 { font-size: 20px; }
+        .picker-filters { display: grid; flex: none; grid-template-columns: minmax(0, 1fr) 100px; gap: 8px; padding: 0 18px 12px; }
+        .picker-search, .picker-grade { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: white; font-size: 14px; }
+        .picker-search:focus, .picker-grade:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+        .picker-count { flex: none; margin: 0; padding: 0 18px 10px; color: var(--muted); font-size: 12px; }
+        .picker-empty { margin: 0; padding: 28px 18px; color: var(--muted); text-align: center; font-size: 14px; }
 
         .nav-links {
             display: flex;
             min-width: 0;
-            flex: 1;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 2px 2px 8px;
+            min-height: 0;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 2px 18px 18px;
             scrollbar-color: #b9cabb transparent;
             scrollbar-width: thin;
         }
@@ -350,8 +388,8 @@
         .nav-link {
             display: flex;
             min-width: 0;
-            min-height: 48px;
-            flex: 1;
+            min-height: 64px;
+            flex: none;
             align-items: center;
             gap: 10px;
             padding: 8px 12px;
@@ -370,6 +408,9 @@
             color: white;
             background: var(--green-dark);
         }
+        .nav-link[hidden] { display: none; }
+        .nav-copy { flex: 1; }
+        .nav-selected { flex: none; font-size: 12px; }
 
         .nav-icon { font-size: 20px; }
         .nav-copy { min-width: 0; }
@@ -419,15 +460,13 @@
             .page { width: calc(100% - 24px); padding-top: 12px; }
             .topbar { padding-bottom: 10px; }
             .brand-mark { width: 34px; }
-            .global-nav { align-items: flex-start; flex-direction: column; gap: 8px; padding: 10px 0; }
-            .nav-links {
-                display: grid;
-                width: 100%;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                overflow: visible;
-                padding: 2px 0;
-            }
-            .nav-link { padding: 8px; }
+            .global-nav { gap: 10px; padding: 8px 0; }
+            .nav-current-title { font-size: 14px; }
+            .picker-heading { padding: 10px 12px; }
+            .picker-filters { padding: 0 12px 10px; }
+            .picker-count { padding: 0 12px 8px; }
+            .nav-links { padding: 2px 12px 12px; }
+            .nav-link { padding: 10px; }
             .workspace { padding-top: 10px; }
             .game-frames { min-height: 65vh; }
         }
@@ -442,19 +481,7 @@
                 padding: 6px 0;
             }
             .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .topbar { padding-bottom: 4px; }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .global-nav { flex: none; padding: 4px 0; gap: 0; }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-label { display: none; }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-links {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 4px;
-                padding: 0;
-                overflow: visible;
-            }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-link { min-height: 38px; padding: 4px; gap: 4px; }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-icon { display: none; }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-grade { margin: 0; font-size: 10px; }
-            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .nav-title { font-size: 11px; }
+            .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .global-nav { padding: 4px 0; }
             .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .workspace { padding-top: 4px; }
             .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .frame-heading { display: none; }
             .page:has(.game-frame[data-game-file*="puzzle"]:not([hidden])) .game-frames { min-height: 0; }
@@ -471,17 +498,14 @@
         </header>
 
         <nav class="global-nav" aria-label="游戏导航">
-            <span class="nav-label">课程游戏</span>
-            <div class="nav-links" id="game-navigation"></div>
+            <div class="nav-current" aria-live="polite">
+                <p class="nav-current-grade" id="selected-grade">G1</p>
+                <h1 class="nav-current-title" id="selected-title">难字拼图游戏</h1>
+            </div>
+            <button class="picker-trigger" id="game-picker-trigger" type="button" aria-haspopup="dialog" aria-controls="game-picker" aria-expanded="false">选择游戏 <span aria-hidden="true">▾</span></button>
         </nav>
 
         <main class="workspace">
-            <header class="frame-heading" aria-live="polite">
-                <div>
-                    <p class="frame-eyebrow" id="selected-grade">G1</p>
-                    <h1 class="frame-title" id="selected-title">难字拼图游戏</h1>
-                </div>
-            </header>
             <div class="game-frames" id="game-frames">
                 <iframe
                     class="game-frame"
@@ -494,6 +518,20 @@
             </div>
         </main>
     </div>
+
+    <dialog class="game-picker" id="game-picker" aria-labelledby="game-picker-title">
+        <div class="picker-heading">
+            <h2 id="game-picker-title">选择游戏</h2>
+            <button class="picker-close" id="game-picker-close" type="button" aria-label="关闭" title="关闭">×</button>
+        </div>
+        <div class="picker-filters">
+            <input class="picker-search" id="game-picker-search" type="search" placeholder="搜索游戏" aria-label="搜索游戏" autocomplete="off" autofocus>
+            <select class="picker-grade" id="game-picker-grade" aria-label="年级"><option value="">全部年级</option></select>
+        </div>
+        <p class="picker-count" id="game-picker-count" role="status"></p>
+        <div class="nav-links" id="game-navigation"></div>
+        <p class="picker-empty" id="game-picker-empty" hidden>没有匹配的游戏</p>
+    </dialog>
 
     <div class="image-version" aria-label="Image version">Version <span id="image-version">dev</span></div>
 
@@ -511,23 +549,73 @@
         const frameElement = document.querySelector("#game-frame");
         const gradeElement = document.querySelector("#selected-grade");
         const titleElement = document.querySelector("#selected-title");
+        const pickerElement = document.querySelector("#game-picker");
+        const pickerTrigger = document.querySelector("#game-picker-trigger");
+        const pickerSearch = document.querySelector("#game-picker-search");
+        const pickerGrade = document.querySelector("#game-picker-grade");
         const frames = new Map([[games[0].file, frameElement]]);
         let activeGameFile = games[0].file;
 
-        navigationElement.innerHTML = games.map((game, index) => `
+        function renderGameNavigation() {
+            navigationElement.innerHTML = games.map((game, index) => `
             <a
                 class="nav-link"
                 href="./Games/${encodeURIComponent(game.file)}"
                 data-game-index="${index}"
-                ${index === 0 ? 'aria-current="page"' : ""}
+                ${game.file === activeGameFile ? 'aria-current="page"' : ""}
             >
                 <span class="nav-icon" aria-hidden="true">${game.icon}</span>
                 <span class="nav-copy">
                     <span class="nav-grade">${game.grade}</span>
                     <span class="nav-title">${game.title}</span>
                 </span>
+                <span class="nav-selected" ${game.file === activeGameFile ? "" : "hidden"}>当前</span>
             </a>
         `).join("");
+            pickerGrade.replaceChildren(new Option("全部年级", ""), ...[...new Set(games.map((game) => game.grade))].map((grade) => new Option(grade, grade)));
+            filterGames();
+        }
+
+        function filterGames() {
+            const query = pickerSearch.value.trim().toLocaleLowerCase();
+            let visibleCount = 0;
+            navigationElement.querySelectorAll(".nav-link").forEach((link) => {
+                const game = games[Number(link.dataset.gameIndex)];
+                link.hidden = Boolean((pickerGrade.value && game.grade !== pickerGrade.value) || !`${game.grade} ${game.title} ${game.type}`.toLocaleLowerCase().includes(query));
+                if (!link.hidden) visibleCount++;
+            });
+            document.querySelector("#game-picker-count").textContent = `${visibleCount} 个游戏`;
+            document.querySelector("#game-picker-empty").hidden = visibleCount > 0;
+        }
+
+        renderGameNavigation();
+        pickerSearch.addEventListener("input", filterGames);
+        pickerGrade.addEventListener("change", filterGames);
+        pickerTrigger.addEventListener("click", () => {
+            pickerSearch.value = "";
+            pickerGrade.value = "";
+            filterGames();
+            navigationElement.scrollTop = 0;
+            pickerElement.showModal();
+            pickerTrigger.setAttribute("aria-expanded", "true");
+            pickerSearch.focus();
+        });
+        document.querySelector("#game-picker-close").addEventListener("click", () => pickerElement.close());
+        pickerElement.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                pickerElement.close();
+            }
+        });
+        pickerElement.addEventListener("close", () => {
+            pickerTrigger.setAttribute("aria-expanded", "false");
+            pickerTrigger.focus();
+        });
+        pickerElement.addEventListener("click", (event) => {
+            if (event.target !== pickerElement) return;
+            const bounds = pickerElement.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) pickerElement.close();
+        });
 
         function createGameFrame(game, hidden = true) {
             const frame = document.createElement("iframe");
@@ -565,11 +653,15 @@
                 activeGameFile = game.file;
             }
 
-            navigationElement.querySelector('[aria-current="page"]')?.removeAttribute("aria-current");
+            const previousLink = navigationElement.querySelector('[aria-current="page"]');
+            previousLink?.removeAttribute("aria-current");
+            if (previousLink) previousLink.querySelector(".nav-selected").hidden = true;
             link.setAttribute("aria-current", "page");
+            link.querySelector(".nav-selected").hidden = false;
             gradeElement.textContent = game.grade;
             titleElement.textContent = game.title;
             nextFrame.title = `${game.grade} ${game.title}`;
+            pickerElement.close();
         });
 
         fetch("./version.txt")
