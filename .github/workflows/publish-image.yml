@@ -12,20 +12,66 @@ permissions:
   contents: read
 
 concurrency:
-  group: container-${{ github.ref }}
+  group: container-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   container:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_VERSION: v${{ github.run_number }}.${{ github.run_attempt }}
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - name: Check Out Repository
         uses: actions/checkout@v4
+
+      - name: Generate Image Version
+        id: version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const major = fs.readFileSync('VERSION_MAJOR', 'utf8').trim();
+            if (!/^(0|[1-9][0-9]*)$/.test(major)) {
+              throw new Error('VERSION_MAJOR must contain a non-negative integer without leading zeros.');
+            }
+
+            const runNumber = Number(process.env.GITHUB_RUN_NUMBER);
+            const attempt = process.env.GITHUB_RUN_ATTEMPT;
+            const baseTag = `image-version-base/v${major}`;
+            let baseRunNumber;
+            try {
+              const { data: ref } = await github.rest.git.getRef({
+                ...context.repo, ref: `tags/${baseTag}`
+              });
+              const { data: tag } = await github.rest.git.getTag({
+                ...context.repo, tag_sha: ref.object.sha
+              });
+              baseRunNumber = JSON.parse(tag.message).runNumber;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              baseRunNumber = runNumber;
+              if (context.eventName !== 'pull_request') {
+                const { data: tag } = await github.rest.git.createTag({
+                  ...context.repo,
+                  tag: baseTag,
+                  message: JSON.stringify({ runNumber }),
+                  object: context.sha,
+                  type: 'commit'
+                });
+                await github.rest.git.createRef({
+                  ...context.repo, ref: `refs/tags/${baseTag}`, sha: tag.sha
+                });
+              }
+            }
+
+            if (!Number.isSafeInteger(baseRunNumber) || baseRunNumber < 1 || baseRunNumber > runNumber) {
+              throw new Error(`Invalid version baseline in ${baseTag}: ${baseRunNumber}`);
+            }
+            const minor = runNumber - baseRunNumber;
+            const version = `v${major}.${minor}.${attempt}`;
+            core.setOutput('version', version);
+            core.exportVariable('IMAGE_VERSION', version);
 
       - name: Set Up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,7 +106,7 @@ jobs:
             type=ref,event=pr
             type=ref,event=tag
             type=sha
-            type=raw,value=${{ env.IMAGE_VERSION }}
+            type=raw,value=${{ steps.version.outputs.version }}
 
       - name: Build Test Image
         uses: docker/build-push-action@v6
@@ -70,7 +116,7 @@ jobs:
           tags: chineseclass:test
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
-            IMAGE_VERSION=${{ env.IMAGE_VERSION }}
+            IMAGE_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -91,5 +137,5 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
-            IMAGE_VERSION=${{ env.IMAGE_VERSION }}
+            IMAGE_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=gha
